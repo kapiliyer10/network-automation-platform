@@ -1,0 +1,23 @@
+name: srl-lab
+
+topology:
+  nodes:
+    R1:
+      kind: nokia_srlinux
+      image: ghcr.io/nokia/srlinux:latest
+      startup-config: ~/network-automation-platform/configs/srl/R1.cli
+
+    R2:
+      kind: nokia_srlinux
+      image: ghcr.io/nokia/srlinux:latest
+      startup-config: ~/network-automation-platform/configs/srl/R2.cli
+
+    R3:
+      kind: nokia_srlinux
+      image: ghcr.io/nokia/srlinux:latest
+      startup-config: ~/network-automation-platform/configs/srl/R3.cli
+
+  links:
+    - endpoints: ["R1:ethernet-1/1", "R2:ethernet-1/1"]
+    - endpoints: ["R2:ethernet-1/2", "R3:ethernet-1/1"]
+    - endpoints: ["R3:ethernet-1/2", "R1:ethernet-1/2"]
