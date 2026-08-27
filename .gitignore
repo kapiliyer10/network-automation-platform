@@ -1,0 +1,15 @@
+# Python virtual environment
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Test/cache artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Containerlab generated runtime files
+configs/clab-srl-lab/
+topology/clab-srl-lab/
