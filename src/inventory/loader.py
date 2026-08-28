@@ -28,7 +28,7 @@ def load_inventory(path: str | Path) -> dict[str, Any]:
     if not isinstance(devices, dict) or not devices:
         raise InventoryError("'devices' must be a non-empty mapping.")
 
-    required_fields = {"host", "platform", "role"}
+    required_fields = {"container", "platform", "role"}
 
     for name, device in devices.items():
         if not isinstance(device, dict):

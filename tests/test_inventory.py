@@ -18,6 +18,6 @@ def test_inventory_contains_required_fields():
     inventory = load_inventory(INVENTORY_FILE)
 
     for device in inventory["devices"].values():
-        assert device["host"]
+        assert device["container"]
         assert device["platform"] == "srlinux"
         assert device["role"] == "router"

@@ -1,15 +1,15 @@
 devices:
   R1:
-    host: 172.20.20.4
+    container: clab-srl-lab-R1
     platform: srlinux
     role: router
 
   R2:
-    host: 172.20.20.5
+    container: clab-srl-lab-R2
     platform: srlinux
     role: router
 
   R3:
-    host: 172.20.20.6
+    container: clab-srl-lab-R3
     platform: srlinux
     role: router
