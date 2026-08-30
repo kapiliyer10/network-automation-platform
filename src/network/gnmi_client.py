@@ -38,3 +38,16 @@ class GNMIClient:
             raise GNMIError(
                 f"gNMI Get failed for {self.target}: {exc}"
             ) from exc
+
+    def get_interface_oper_state(self, interface_name: str) -> str:
+        """Return the operational state of an interface."""
+        path = f"/interface[name={interface_name}]/oper-state"
+
+        result = self.get([path])
+
+        try:
+            return result["notification"][0]["update"][0]["val"]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise GNMIError(
+                f"Unable to extract oper-state for {interface_name}"
+            ) from exc
