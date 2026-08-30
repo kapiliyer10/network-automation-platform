@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-
+from dotenv import load_dotenv
 import pytest
 
 from src.inventory.loader import load_inventory
@@ -10,7 +10,7 @@ from src.network.gnmi_client import GNMIClient, GNMIError
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 INVENTORY_FILE = PROJECT_ROOT / "configs" / "inventory" / "devices.yaml"
-
+load_dotenv()
 
 @pytest.mark.parametrize(
     "interface_name",

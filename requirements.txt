@@ -1,0 +1,5 @@
+PyYAML
+docker
+pygnmi
+pytest
+python-dotenv
