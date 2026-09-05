@@ -1,5 +1,4 @@
 from typing import Any
-from unittest import result
 
 from pygnmi.client import gNMIclient
 
@@ -53,6 +52,26 @@ class GNMIClient:
                 f"Unable to extract oper-state for {interface_name}"
             ) from exc
 
+    def get_ospf_interfaces(self) -> list[dict]:
+        """Return OSPF interfaces in area 0."""
+
+        path = (
+            "/network-instance[name=default]/"
+            "protocols/srl_nokia-ospf:ospf/"
+            "instance[name=default]/"
+            "area[area-id=0.0.0.0]/"
+            "interface"
+        )
+
+        result = self.get([path])
+
+        try:
+            return result["notification"][0]["update"][0]["val"]["interface"]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise GNMIError(
+                f"Unable to extract OSPF interfaces from device {self.target}"
+            ) from exc
+
     def get_ospf_neighbors(self, interface_name: str) -> list[dict[str, str]]:
         """Return OSPF neighbors for an interface."""
         path = (
@@ -64,15 +83,26 @@ class GNMIClient:
             "neighbor"
     )
 
+
         result = self.get([path])
 
+        if not result.get("notification"):
+            raise GNMIError(
+                f"Unable to extract OSPF neighbors for {interface_name}"
+            )
+        notification = result["notification"][0]
+
+        if "update" not in notification:
+            return []
+        
         try:
-            neighbors = result["notification"][0]["update"][0]["val"]["neighbor"]
+            neighbors = notification["update"][0]["val"]["neighbor"]
+            
         except (KeyError, IndexError, TypeError) as exc:
             raise GNMIError(
                 f"Unable to extract OSPF neighbors for {interface_name}"
             ) from exc
-
+        
         return [
             {
                 "router_id": neighbor["router-id"],
@@ -81,3 +111,27 @@ class GNMIClient:
             }
             for neighbor in neighbors
         ]
+
+    def get_all_ospf_neighbors(self) -> list[dict[str, str]]:
+        """Return all OSPF neighbors on the device."""
+
+        interfaces = self.get_ospf_interfaces()
+
+        neighbors = []
+
+        for interface in interfaces:
+            interface_name = interface["interface-name"]
+
+            interface_neighbors = self.get_ospf_neighbors(interface_name)
+
+            for neighbor in interface_neighbors:
+                neighbors.append(
+                    {
+                        "interface": interface_name,
+                        "router_id": neighbor["router_id"],
+                        "address": neighbor["address"],
+                        "state": neighbor["state"],
+                 }
+                )
+
+        return neighbors

@@ -81,3 +81,29 @@ def test_gnmi_get_ospf_neighbors():
     assert neighbors[0]["router_id"] == "2.2.2.2"
     assert neighbors[0]["address"] == "10.0.12.2"
     assert neighbors[0]["state"] == "full"
+
+def test_gnmi_get_all_ospf_neighbors():
+    inventory = load_inventory(INVENTORY_FILE)
+
+    r1 = inventory["devices"]["R1"]
+    host = resolve_container_ip(r1["container"])
+
+    username = os.environ["GNMI_USERNAME"]
+    password = os.environ["GNMI_PASSWORD"]
+
+    client = GNMIClient(
+        host=host,
+        port=57401,
+        username=username,
+        password=password,
+    )
+
+    neighbors = client.get_all_ospf_neighbors()
+    assert len(neighbors) == 2
+    assert neighbors[0]["router_id"] == "2.2.2.2"
+    assert neighbors[0]["address"] == "10.0.12.2"
+    assert neighbors[0]["state"] == "full"
+    assert neighbors[1]["router_id"] == "3.3.3.3"
+    assert neighbors[1]["address"] == "10.0.31.2"
+    assert neighbors[1]["state"] == "full"
+    
