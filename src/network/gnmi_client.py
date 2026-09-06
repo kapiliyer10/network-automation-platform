@@ -39,18 +39,47 @@ class GNMIClient:
                 f"gNMI Get failed for {self.target}: {exc}"
             ) from exc
 
+    def get_hostname(self) -> str:
+        """Return the device hostname."""
+        result = self.get(["/system/name"])
+
+        try:
+            return result["notification"][0]["update"][0]["val"]["host-name"]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise GNMIError(
+                f"Unable to extract hostname from device {self.target}"
+            ) from exc
+
     def get_interface_oper_state(self, interface_name: str) -> str:
         """Return the operational state of an interface."""
         path = f"/interface[name={interface_name}]/oper-state"
 
         result = self.get([path])
-
         try:
             return result["notification"][0]["update"][0]["val"]
         except (KeyError, IndexError, TypeError) as exc:
             raise GNMIError(
                 f"Unable to extract oper-state for {interface_name}"
             ) from exc
+
+    def get_interfaces(self) -> list[dict[str, str]]:
+        """Return discovered interfaces with administrative and operational state."""
+        result = self.get(["/interface"])
+        try:
+            interfaces = result["notification"][0]["update"][0]["val"]["srl_nokia-interfaces:interface"]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise GNMIError(
+                f"Unable to extract interfaces from device {self.target}"
+            ) from exc
+
+        return [
+            {
+                "name": interface["name"],
+                "admin_state": interface["admin-state"],
+                "oper_state": interface["oper-state"],
+            }
+            for interface in interfaces
+        ]
 
     def get_ospf_interfaces(self) -> list[dict]:
         """Return OSPF interfaces in area 0."""
@@ -135,3 +164,63 @@ class GNMIClient:
                 )
 
         return neighbors
+
+    def get_ip_addresses(self) -> list[dict[str, str | int]]:
+        """Return discovered IPv4 addresses and their interface/subinterface."""
+        result = self.get(["/interface/subinterface/ipv4"])
+
+        try:
+            interfaces = result["notification"][0]["update"][0]["val"]["srl_nokia-interfaces:interface"]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise GNMIError(
+                f"Unable to extract IP addresses from device {self.target}"
+            ) from exc
+
+        addresses = []
+
+        for interface in interfaces:
+            interface_name = interface["name"]
+
+            for subinterface in interface.get("subinterface", []):
+                subinterface_index = subinterface["index"]
+
+                ipv4 = subinterface.get("ipv4", {})
+                for address in ipv4.get("address", []):
+                    addresses.append(
+                        {
+                            "interface": interface_name,
+                            "subinterface_index": subinterface_index,
+                            "ip_address": address["ip-prefix"],
+                            "origin": address["origin"],
+                            "status": address["status"],
+
+                        }
+                    )
+
+        return addresses
+
+    def get_routes(self) -> list[dict[str, str | int | bool]]:
+        """Return discovered IPv4 routes from the default network instance."""
+
+        result = self.get([
+            "/network-instance[name=default]/route-table"
+        ])
+
+        try:
+            routes = result["notification"][0]["update"][0]["val"][
+            "srl_nokia-ip-route-tables:ipv4-unicast"]["route"]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise GNMIError(
+                f"Unable to extract routes from device {self.target}"
+            ) from exc
+
+        return [
+            {
+                "prefix": route["ipv4-prefix"],
+                "active": route["active"],
+                "metric": route["metric"],
+                "preference": route["preference"],
+                "route_type": route["route-type"].split(":")[-1],
+            }
+            for route in routes
+        ]
