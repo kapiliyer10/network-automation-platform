@@ -3,3 +3,4 @@ docker
 pygnmi
 pytest
 python-dotenv
+Jinja2==3.1.6

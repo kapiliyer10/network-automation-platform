@@ -1,0 +1,3 @@
+{%- for interface_name, interface in interfaces.items() %}
+set / interface {{ interface_name }} admin-state {{ interface.admin_state }}
+{%- endfor %}
