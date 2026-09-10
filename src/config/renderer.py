@@ -35,3 +35,20 @@ def render_interface_config(
         raise ConfigRenderError(
             f"Failed to render configuration: {exc}"
         ) from exc
+
+def render_all_device_configs(
+        desired_state: dict[str, Any],
+        template_path: str | Path,
+) -> dict[str, str]:
+    """Render interface configuration for every device."""
+    device_configs = {}
+
+    for device_name, device in desired_state["devices"].items():
+        interfaces = device["interfaces"]
+
+        device_configs[device_name] = render_interface_config(
+            desired_interfaces=interfaces,
+            template_path=template_path,
+        )
+
+    return device_configs
