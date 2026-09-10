@@ -1,0 +1,21 @@
+devices:
+  R1:
+    interfaces:
+      ethernet-1/1:
+        admin_state: enable
+      ethernet-1/2:
+        admin_state: enable
+
+  R2:
+    interfaces:
+      ethernet-1/1:
+        admin_state: enable
+      ethernet-1/2:
+        admin_state: enable
+
+  R3:
+    interfaces:
+      ethernet-1/1:
+        admin_state: enable
+      ethernet-1/2:
+        admin_state: enable
