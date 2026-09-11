@@ -52,3 +52,18 @@ def render_all_device_configs(
         )
 
     return device_configs
+
+def write_device_configs(
+    device_configs: dict[str, str],
+    output_dir: str | Path,
+) -> None:
+    """Write rendered device configurations to .cli files."""
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    for device_name, config in device_configs.items():
+        config_file = output_path / f"{device_name}.cli"
+        config_file.write_text(
+            config + "\n",
+            encoding="utf-8",
+        )
