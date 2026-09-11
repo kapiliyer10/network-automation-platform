@@ -3,19 +3,37 @@ devices:
     interfaces:
       ethernet-1/1:
         admin_state: enable
+        ipv4:
+          admin_state: enable
+          address: 10.0.12.1/30
       ethernet-1/2:
         admin_state: enable
+        ipv4:
+          admin_state: enable
+          address: 10.0.31.1/30
 
   R2:
     interfaces:
       ethernet-1/1:
         admin_state: enable
+        ipv4:
+          admin_state: enable
+          address: 10.0.12.2/30
       ethernet-1/2:
         admin_state: enable
+        ipv4:
+          admin_state: enable
+          address: 10.0.23.1/30
 
   R3:
     interfaces:
       ethernet-1/1:
         admin_state: enable
+        ipv4:
+          admin_state: enable
+          address: 10.0.23.2/30
       ethernet-1/2:
         admin_state: enable
+        ipv4:
+          admin_state: enable
+          address: 10.0.31.2/30

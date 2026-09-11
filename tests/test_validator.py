@@ -65,6 +65,7 @@ def test_validate_r1_interfaces_detects_drift():
         result
         for result in results
         if result["interface"] == "ethernet-1/2"
+        and result["field"] == "admin_state"
     ]
 
     assert len(drifted) == 1

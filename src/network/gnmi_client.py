@@ -224,3 +224,26 @@ class GNMIClient:
             }
             for route in routes
         ]
+
+    def get_interface_ipv4(self, interface_name: str) -> dict[str, Any]:
+        """Return IPv4 state for interface subinterface 0."""
+        result = self.get([
+            f"/interface[name={interface_name}]/"
+            "subinterface[index=0]/ipv4"
+        ])
+
+        try:
+            ipv4 = result["notification"][0]["update"][0]["val"]
+
+            address = ipv4.get("address", [])
+
+            return {
+                "admin_state": ipv4["admin-state"],
+                "address": address[0]["ip-prefix"] if address else None,
+            }
+
+        except (KeyError, IndexError, TypeError) as exc:
+            raise GNMIError(
+                f"Unable to extract IPv4 state for interface "
+                f"{interface_name} from device {self.target}"
+            ) from exc

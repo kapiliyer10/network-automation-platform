@@ -26,7 +26,21 @@ def validate_device_interfaces(
     )
 
     desired_interfaces = desired_state["devices"][device_name]["interfaces"]
+
     actual_interfaces = client.get_interfaces()
+
+    actual_by_name = {
+        interface["name"]: interface
+        for interface in actual_interfaces
+    }
+
+    for interface_name in desired_interfaces:
+        actual_interface = actual_by_name.get(interface_name)
+
+        if actual_interface is not None:
+            actual_interface["ipv4"] = client.get_interface_ipv4(
+                interface_name
+            )
 
     return compare_interfaces(
         device_name=device_name,

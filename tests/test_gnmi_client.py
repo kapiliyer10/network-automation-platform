@@ -237,3 +237,25 @@ def test_gnmi_get_routes():
             route["route_type"] == "ospfv2"
             for route in routes
         ), f"{device_name} has no OSPF routes"
+
+def test_gnmi_get_interface_ipv4():
+    inventory = load_inventory(INVENTORY_FILE)
+
+    username = os.environ["GNMI_USERNAME"]
+    password = os.environ["GNMI_PASSWORD"]
+
+    host = resolve_container_ip(
+        inventory["devices"]["R1"]["container"]
+    )
+
+    client = GNMIClient(
+        host=host,
+        port=57401,
+        username=username,
+        password=password,
+    )
+
+    result = client.get_interface_ipv4("ethernet-1/1")
+
+    assert result["admin_state"] == "enable"
+    assert result["address"] == "10.0.12.1/30"

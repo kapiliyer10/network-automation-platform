@@ -56,4 +56,25 @@ def load_desired_state(path: str | Path) -> dict[str, Any]:
                     "must contain 'admin_state'."
                 )
 
+            ipv4 = interface_config.get("ipv4")
+
+            if ipv4 is not None:
+                if not isinstance(ipv4, dict):
+                    raise DesiredStateError(
+                        f"IPv4 configuration for interface '{interface_name}' "
+                        f"on '{device_name}' must be a mapping."
+                    )
+
+                if "admin_state" not in ipv4:
+                    raise DesiredStateError(
+                        f"IPv4 configuration for interface '{interface_name}' "
+                        f"on '{device_name}' is missing 'admin_state'."
+                    )
+
+                if "address" not in ipv4:
+                    raise DesiredStateError(
+                        f"IPv4 configuration for interface '{interface_name}' "
+                        f"on '{device_name}' is missing 'address'."
+                    )
+
     return data
