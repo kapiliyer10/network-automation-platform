@@ -12,6 +12,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 INVENTORY_FILE = PROJECT_ROOT / "configs" / "inventory" / "devices.yaml"
 load_dotenv()
 
+
 def test_gnmi_get_hostname():
     inventory = load_inventory(INVENTORY_FILE)
 
@@ -31,6 +32,7 @@ def test_gnmi_get_hostname():
     hostname = client.get_hostname()
 
     assert hostname == "R1"
+
 
 def test_gnmi_get_interfaces_oper_state():
     inventory = load_inventory(INVENTORY_FILE)
@@ -60,6 +62,7 @@ def test_gnmi_get_interfaces_oper_state():
                 f"{device_name} {interface_name} should be up, "
                 f"but is {discovered[interface_name]['oper_state']}"
             )
+
 
 def test_gnmi_get_interfaces():
     inventory = load_inventory(INVENTORY_FILE)
@@ -94,6 +97,7 @@ def test_gnmi_get_interfaces():
             f"{device_name} is missing ethernet-1/2"
         )
 
+
 def test_gnmi_get_invalid_interface():
     inventory = load_inventory(INVENTORY_FILE)
 
@@ -112,6 +116,7 @@ def test_gnmi_get_invalid_interface():
 
     with pytest.raises(GNMIError):
         client.get_interface_oper_state("ethernet-1/99")
+
 
 def test_gnmi_get_ospf_neighbors():
     inventory = load_inventory(INVENTORY_FILE)
@@ -135,6 +140,7 @@ def test_gnmi_get_ospf_neighbors():
     assert neighbors[0]["router_id"] == "2.2.2.2"
     assert neighbors[0]["address"] == "10.0.12.2"
     assert neighbors[0]["state"] == "full"
+
 
 def test_gnmi_get_all_ospf_neighbors():
     inventory = load_inventory(INVENTORY_FILE)
@@ -204,6 +210,7 @@ def test_gnmi_get_ip_addresses():
             f"{device_name} is missing IPv4 address on lo0"
         )
 
+
 def test_gnmi_get_routes():
     inventory = load_inventory(INVENTORY_FILE)
 
@@ -237,6 +244,7 @@ def test_gnmi_get_routes():
             route["route_type"] == "ospfv2"
             for route in routes
         ), f"{device_name} has no OSPF routes"
+
 
 def test_gnmi_get_interface_ipv4():
     inventory = load_inventory(INVENTORY_FILE)
