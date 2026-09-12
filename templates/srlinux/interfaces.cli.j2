@@ -1,3 +1,7 @@
 {%- for interface_name, interface in interfaces.items() %}
 set / interface {{ interface_name }} admin-state {{ interface.admin_state }}
+{%- if interface.ipv4 %}
+set / interface {{ interface_name }} subinterface 0 ipv4 admin-state {{ interface.ipv4.admin_state }}
+set / interface {{ interface_name }} subinterface 0 ipv4 address {{ interface.ipv4.address }}
+{%- endif %}
 {%- endfor %}

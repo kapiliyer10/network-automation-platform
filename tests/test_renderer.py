@@ -14,10 +14,19 @@ TEMPLATE_FILE = (
 def test_render_interface_config():
     interfaces = {
         "ethernet-1/1": {
-            "admin_state": "enable"
+            "admin_state": "enable",
+            "ipv4": {
+                "admin_state": "enable",
+                "address": "10.0.12.1/30",
+            },
         },
+
         "ethernet-1/2": {
-            "admin_state": "disable"
+            "admin_state": "disable",
+            "ipv4": {
+                "admin_state": "enable",
+                "address": "10.0.12.2/30",
+            },
         },
     }
 
@@ -27,11 +36,16 @@ def test_render_interface_config():
     )
 
     expected = (
-        "set / interface ethernet-1/1 admin-state enable\n"
-        "set / interface ethernet-1/2 admin-state disable"
+    "set / interface ethernet-1/1 admin-state enable\n"
+    "set / interface ethernet-1/1 subinterface 0 ipv4 admin-state enable\n"
+    "set / interface ethernet-1/1 subinterface 0 ipv4 address 10.0.12.1/30\n"
+    "set / interface ethernet-1/2 admin-state disable\n"
+    "set / interface ethernet-1/2 subinterface 0 ipv4 admin-state enable\n"
+    "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.12.2/30"
     )
 
     assert result == expected
+
 
 def test_render_all_device_configs():
     desired_state = load_desired_state(
@@ -45,28 +59,61 @@ def test_render_all_device_configs():
 
     assert set(configs) == {"R1", "R2", "R3"}
 
-    expected_config = (
-        "set / interface ethernet-1/1 admin-state enable\n"
-        "set / interface ethernet-1/2 admin-state enable"
-    )
+    expected_configs = {
+        "R1": (
+            "set / interface ethernet-1/1 admin-state enable\n"
+            "set / interface ethernet-1/1 subinterface 0 ipv4 admin-state enable\n"
+            "set / interface ethernet-1/1 subinterface 0 ipv4 address 10.0.12.1/30\n"
+            "set / interface ethernet-1/2 admin-state enable\n"
+            "set / interface ethernet-1/2 subinterface 0 ipv4 admin-state enable\n"
+            "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.31.1/30"
+        ),
+        "R2": (
+            "set / interface ethernet-1/1 admin-state enable\n"
+            "set / interface ethernet-1/1 subinterface 0 ipv4 admin-state enable\n"
+            "set / interface ethernet-1/1 subinterface 0 ipv4 address 10.0.12.2/30\n"
+            "set / interface ethernet-1/2 admin-state enable\n"
+            "set / interface ethernet-1/2 subinterface 0 ipv4 admin-state enable\n"
+            "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.23.1/30"
+        ),
+        "R3": (
+            "set / interface ethernet-1/1 admin-state enable\n"
+            "set / interface ethernet-1/1 subinterface 0 ipv4 admin-state enable\n"
+            "set / interface ethernet-1/1 subinterface 0 ipv4 address 10.0.23.2/30\n"
+            "set / interface ethernet-1/2 admin-state enable\n"
+            "set / interface ethernet-1/2 subinterface 0 ipv4 admin-state enable\n"
+            "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.31.2/30"
+        ),
+    }
 
-    assert configs["R1"] == expected_config
-    assert configs["R2"] == expected_config
-    assert configs["R3"] == expected_config
+    assert configs == expected_configs
+
 
 def test_write_device_configs(tmp_path):
     device_configs = {
         "R1": (
             "set / interface ethernet-1/1 admin-state enable\n"
-            "set / interface ethernet-1/2 admin-state enable"
+            "set / interface ethernet-1/1 subinterface 0 ipv4 admin-state enable\n"
+            "set / interface ethernet-1/1 subinterface 0 ipv4 address 10.0.12.1/30\n"
+            "set / interface ethernet-1/2 admin-state enable\n"
+            "set / interface ethernet-1/2 subinterface 0 ipv4 admin-state enable\n"
+            "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.31.1/30"
         ),
         "R2": (
             "set / interface ethernet-1/1 admin-state enable\n"
-            "set / interface ethernet-1/2 admin-state enable"
+            "set / interface ethernet-1/1 subinterface 0 ipv4 admin-state enable\n"
+            "set / interface ethernet-1/1 subinterface 0 ipv4 address 10.0.12.2/30\n"
+            "set / interface ethernet-1/2 admin-state enable\n"
+            "set / interface ethernet-1/2 subinterface 0 ipv4 admin-state enable\n"
+            "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.23.1/30"
         ),
         "R3": (
             "set / interface ethernet-1/1 admin-state enable\n"
-            "set / interface ethernet-1/2 admin-state enable"
+            "set / interface ethernet-1/1 subinterface 0 ipv4 admin-state enable\n"
+            "set / interface ethernet-1/1 subinterface 0 ipv4 address 10.0.23.2/30\n"
+            "set / interface ethernet-1/2 admin-state enable\n"
+            "set / interface ethernet-1/2 subinterface 0 ipv4 admin-state enable\n"
+            "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.31.2/30"
         ),
     }
 
