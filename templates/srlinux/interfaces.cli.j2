@@ -5,3 +5,9 @@ set / interface {{ interface_name }} subinterface 0 ipv4 admin-state {{ interfac
 set / interface {{ interface_name }} subinterface 0 ipv4 address {{ interface.ipv4.address }}
 {%- endif %}
 {%- endfor %}
+
+{%- for network_instance_name, network_instance in network_instances.items() %}
+{%- for interface in network_instance.interfaces %}
+set / network-instance {{ network_instance_name }} interface {{ interface }}
+{%- endfor %}
+{%- endfor %}

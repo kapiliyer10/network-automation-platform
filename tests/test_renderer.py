@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from src.config.renderer import render_interface_config
+from src.config.renderer import render_device_config
 from src.config.renderer import render_all_device_configs
 from src.desired.loader import load_desired_state
 from src.config.renderer import write_device_configs
@@ -30,8 +30,9 @@ def test_render_interface_config():
         },
     }
 
-    result = render_interface_config(
+    result = render_device_config(
         desired_interfaces=interfaces,
+        desired_network_instances={},
         template_path=TEMPLATE_FILE,
     )
 
@@ -66,7 +67,9 @@ def test_render_all_device_configs():
             "set / interface ethernet-1/1 subinterface 0 ipv4 address 10.0.12.1/30\n"
             "set / interface ethernet-1/2 admin-state enable\n"
             "set / interface ethernet-1/2 subinterface 0 ipv4 admin-state enable\n"
-            "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.31.1/30"
+            "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.31.1/30\n"
+            "set / network-instance default interface ethernet-1/1.0\n"
+            "set / network-instance default interface ethernet-1/2.0"
         ),
         "R2": (
             "set / interface ethernet-1/1 admin-state enable\n"
@@ -74,7 +77,9 @@ def test_render_all_device_configs():
             "set / interface ethernet-1/1 subinterface 0 ipv4 address 10.0.12.2/30\n"
             "set / interface ethernet-1/2 admin-state enable\n"
             "set / interface ethernet-1/2 subinterface 0 ipv4 admin-state enable\n"
-            "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.23.1/30"
+            "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.23.1/30\n"
+            "set / network-instance default interface ethernet-1/1.0\n"
+            "set / network-instance default interface ethernet-1/2.0"
         ),
         "R3": (
             "set / interface ethernet-1/1 admin-state enable\n"
@@ -82,7 +87,9 @@ def test_render_all_device_configs():
             "set / interface ethernet-1/1 subinterface 0 ipv4 address 10.0.23.2/30\n"
             "set / interface ethernet-1/2 admin-state enable\n"
             "set / interface ethernet-1/2 subinterface 0 ipv4 admin-state enable\n"
-            "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.31.2/30"
+            "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.31.2/30\n"
+            "set / network-instance default interface ethernet-1/1.0\n"
+            "set / network-instance default interface ethernet-1/2.0"
         ),
     }
 

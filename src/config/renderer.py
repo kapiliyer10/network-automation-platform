@@ -8,8 +8,9 @@ class ConfigRenderError(Exception):
     """Raised when configuration rendering fails."""
 
 
-def render_interface_config(
+def render_device_config(
     desired_interfaces: dict[str, dict[str, Any]],
+    desired_network_instances: dict[str, dict[str, Any]],
     template_path: str | Path,
 ) -> str:
     """Render interface configuration from desired state."""
@@ -28,7 +29,8 @@ def render_interface_config(
         template = env.get_template(template_path.name)
 
         return template.render(
-            interfaces=desired_interfaces
+            interfaces=desired_interfaces,
+            network_instances=desired_network_instances,
         ).strip()
 
     except Exception as exc:
@@ -45,10 +47,12 @@ def render_all_device_configs(
 
     for device_name, device in desired_state["devices"].items():
         interfaces = device["interfaces"]
+        network_instances = device.get("network_instances", {})
 
-        device_configs[device_name] = render_interface_config(
+        device_configs[device_name] = render_device_config(
             desired_interfaces=interfaces,
             template_path=template_path,
+            desired_network_instances=network_instances,
         )
 
     return device_configs
