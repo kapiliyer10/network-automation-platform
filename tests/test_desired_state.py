@@ -119,3 +119,16 @@ devices:
 
     with pytest.raises(DesiredStateError):
         load_desired_state(desired_state_file)
+
+
+def test_desired_state_contains_network_instances():
+    desired_state = load_desired_state(DESIRED_STATE_FILE)
+
+    for device in desired_state["devices"].values():
+        network_instances = device["network_instances"]
+
+        assert "default" in network_instances
+        assert network_instances["default"]["interfaces"] == [
+            "ethernet-1/1.0",
+            "ethernet-1/2.0",
+        ]

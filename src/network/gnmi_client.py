@@ -247,3 +247,31 @@ class GNMIClient:
                 f"Unable to extract IPv4 state for interface "
                 f"{interface_name} from device {self.target}"
             ) from exc
+
+
+    def get_network_instance_interfaces(
+        self,
+        network_instance_name: str,
+    ) -> list[dict[str, str]]:
+        """Return interfaces associated with a network instance."""
+        result = self.get([
+            f"/network-instance[name={network_instance_name}]/interface"
+        ])
+
+        try:
+            interfaces = result["notification"][0]["update"][0]["val"][
+                "interface"
+            ]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise GNMIError(
+                f"Unable to extract interfaces for network instance "
+                f"{network_instance_name} from device {self.target}"
+            ) from exc
+
+        return [
+            {
+                "name": interface["name"],
+                "oper_state": interface["oper-state"],
+            }
+            for interface in interfaces
+        ]

@@ -1,6 +1,9 @@
 from typing import Any
 
-from src.desired.comparator import compare_interfaces
+from src.desired.comparator import (
+    compare_interfaces,
+    compare_network_instance_interfaces,
+)
 from src.network.docker_resolver import resolve_container_ip
 from src.network.gnmi_client import GNMIClient
 
@@ -47,3 +50,53 @@ def validate_device_interfaces(
         desired_interfaces=desired_interfaces,
         actual_interfaces=actual_interfaces,
     )
+
+
+def validate_device_network_instances(
+    device_name: str,
+    inventory: dict[str, Any],
+    desired_state: dict[str, Any],
+    username: str,
+    password: str,
+) -> list[dict[str, str]]:
+    """Compare desired network-instance membership with actual state."""
+
+    device = inventory["devices"][device_name]
+
+    desired_network_instances = desired_state["devices"][device_name].get(
+        "network_instances", {}
+    )
+
+    if not desired_network_instances:
+        return []
+
+    host = resolve_container_ip(device["container"])
+
+    client = GNMIClient(
+        host=host,
+        port=57401,
+        username=username,
+        password=password,
+    )
+
+    results = []
+
+    for network_instance_name, network_instance in (
+        desired_network_instances.items()
+    ):
+        desired_interfaces = network_instance["interfaces"]
+
+        actual_interfaces = client.get_network_instance_interfaces(
+            network_instance_name
+        )
+
+        results.extend(
+            compare_network_instance_interfaces(
+                device_name=device_name,
+                network_instance_name=network_instance_name,
+                desired_interfaces=desired_interfaces,
+                actual_interfaces=actual_interfaces,
+            )
+        )
+
+    return results

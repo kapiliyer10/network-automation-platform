@@ -267,3 +267,34 @@ def test_gnmi_get_interface_ipv4():
 
     assert result["admin_state"] == "enable"
     assert result["address"] == "10.0.12.1/30"
+
+
+def test_gnmi_get_network_instance_interfaces():
+    inventory = load_inventory(INVENTORY_FILE)
+
+    username = os.environ["GNMI_USERNAME"]
+    password = os.environ["GNMI_PASSWORD"]
+
+    host = resolve_container_ip(
+        inventory["devices"]["R1"]["container"]
+    )
+
+    client = GNMIClient(
+        host=host,
+        port=57401,
+        username=username,
+        password=password,
+    )
+
+    interfaces = client.get_network_instance_interfaces("default")
+
+    assert interfaces
+
+    discovered = {
+        interface["name"]: interface["oper_state"]
+        for interface in interfaces
+    }
+
+    assert discovered["ethernet-1/1.0"] == "up"
+    assert discovered["ethernet-1/2.0"] == "up"
+    assert discovered["lo0.0"] == "up"

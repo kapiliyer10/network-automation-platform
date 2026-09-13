@@ -36,12 +36,12 @@ def test_render_interface_config():
     )
 
     expected = (
-    "set / interface ethernet-1/1 admin-state enable\n"
-    "set / interface ethernet-1/1 subinterface 0 ipv4 admin-state enable\n"
-    "set / interface ethernet-1/1 subinterface 0 ipv4 address 10.0.12.1/30\n"
-    "set / interface ethernet-1/2 admin-state disable\n"
-    "set / interface ethernet-1/2 subinterface 0 ipv4 admin-state enable\n"
-    "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.12.2/30"
+        "set / interface ethernet-1/1 admin-state enable\n"
+        "set / interface ethernet-1/1 subinterface 0 ipv4 admin-state enable\n"
+        "set / interface ethernet-1/1 subinterface 0 ipv4 address 10.0.12.1/30\n"
+        "set / interface ethernet-1/2 admin-state disable\n"
+        "set / interface ethernet-1/2 subinterface 0 ipv4 admin-state enable\n"
+        "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.12.2/30"
     )
 
     assert result == expected

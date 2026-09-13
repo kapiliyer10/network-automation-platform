@@ -4,9 +4,11 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from src.desired.loader import load_desired_state
-from src.desired.validator import validate_device_interfaces
 from src.inventory.loader import load_inventory
-
+from src.desired.validator import (
+    validate_device_interfaces,
+    validate_device_network_instances,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -44,6 +46,7 @@ def test_validate_interfaces():
             for result in results
         ), f"{device_name} has interface drift: {results}"
 
+
 def test_validate_r1_interfaces_detects_drift():
     inventory = load_inventory(INVENTORY_FILE)
     desired_state = load_desired_state(DESIRED_STATE_FILE)
@@ -71,4 +74,54 @@ def test_validate_r1_interfaces_detects_drift():
     assert len(drifted) == 1
     assert drifted[0]["desired"] == "disable"
     assert drifted[0]["actual"] == "enable"
+    assert drifted[0]["status"] == "DRIFT"
+
+
+def test_validate_network_instances():
+    inventory = load_inventory(INVENTORY_FILE)
+    desired_state = load_desired_state(DESIRED_STATE_FILE)
+
+    results = validate_device_network_instances(
+        device_name="R1",
+        inventory=inventory,
+        desired_state=desired_state,
+        username=os.environ["GNMI_USERNAME"],
+        password=os.environ["GNMI_PASSWORD"],
+    )
+
+    assert results
+
+    assert all(
+        result["status"] == "PASS"
+        for result in results
+    )
+
+
+def test_validate_r1_network_instances_detects_drift():
+    inventory = load_inventory(INVENTORY_FILE)
+    desired_state = load_desired_state(DESIRED_STATE_FILE)
+
+    desired_state["devices"]["R1"]["network_instances"]["default"][
+        "interfaces"
+    ] = [
+        "ethernet-1/1.0",
+        "ethernet-1/99.0",
+    ]
+
+    results = validate_device_network_instances(
+        device_name="R1",
+        inventory=inventory,
+        desired_state=desired_state,
+        username=os.environ["GNMI_USERNAME"],
+        password=os.environ["GNMI_PASSWORD"],
+    )
+
+    drifted = [
+        result
+        for result in results
+        if result["interface"] == "ethernet-1/99.0"
+    ]
+
+    assert len(drifted) == 1
+    assert drifted[0]["network_instance"] == "default"
     assert drifted[0]["status"] == "DRIFT"

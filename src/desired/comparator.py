@@ -1,5 +1,6 @@
 from typing import Any
 
+
 def compare_interfaces(
         device_name: str,
         desired_interfaces: dict[str, dict[str, Any]],
@@ -48,5 +49,39 @@ def compare_interfaces(
                     "status": status,
                 }
             )
+
+    return results
+
+
+def compare_network_instance_interfaces(
+    device_name: str,
+    network_instance_name: str,
+    desired_interfaces: list[str],
+    actual_interfaces: list[dict[str, str]],
+) -> list[dict[str, str]]:
+    """Compare desired network-instance interface membership."""
+
+    actual_names = {
+        interface["name"]
+        for interface in actual_interfaces
+    }
+
+    results = []
+
+    for interface_name in desired_interfaces:
+        status = (
+            "PASS"
+            if interface_name in actual_names
+            else "DRIFT"
+        )
+
+        results.append(
+            {
+                "device": device_name,
+                "network_instance": network_instance_name,
+                "interface": interface_name,
+                "status": status,
+            }
+        )
 
     return results
