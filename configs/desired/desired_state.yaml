@@ -18,6 +18,23 @@ devices:
           - ethernet-1/1.0
           - ethernet-1/2.0
 
+    ospf:
+      instance:
+        name: default
+        admin_state: enable
+        version: ospf-v2
+        router_id: 1.1.1.1
+        areas:
+          0.0.0.0:
+            interfaces:
+              ethernet-1/1.0:
+                admin_state: enable
+              ethernet-1/2.0:
+                admin_state: enable
+              lo0.0:
+                admin_state: enable
+                passive: true
+
   R2:
     interfaces:
       ethernet-1/1:
@@ -37,6 +54,23 @@ devices:
           - ethernet-1/1.0
           - ethernet-1/2.0
 
+    ospf:
+      instance:
+        name: default
+        admin_state: enable
+        version: ospf-v2
+        router_id: 2.2.2.2
+        areas:
+          0.0.0.0:
+            interfaces:
+              ethernet-1/1.0:
+                admin_state: enable
+              ethernet-1/2.0:
+                admin_state: enable
+              lo0.0:
+                admin_state: enable
+                passive: true
+
   R3:
     interfaces:
       ethernet-1/1:
@@ -55,3 +89,20 @@ devices:
         interfaces:
           - ethernet-1/1.0
           - ethernet-1/2.0
+
+    ospf:
+      instance:
+        name: default
+        admin_state: enable
+        version: ospf-v2
+        router_id: 3.3.3.3
+        areas:
+          0.0.0.0:
+            interfaces:
+              ethernet-1/1.0:
+                admin_state: enable
+              ethernet-1/2.0:
+                admin_state: enable
+              lo0.0:
+                admin_state: enable
+                passive: true

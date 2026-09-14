@@ -77,4 +77,42 @@ def load_desired_state(path: str | Path) -> dict[str, Any]:
                         f"on '{device_name}' is missing 'address'."
                     )
 
+        ospf = device_config.get("ospf")
+
+        if ospf is not None:
+            if not isinstance(ospf, dict):
+                raise DesiredStateError(
+                    f"OSPF configuration for device '{device_name}' "
+                    "must be a mapping."
+                )
+
+            instance = ospf.get("instance")
+
+            if not isinstance(instance, dict):
+                raise DesiredStateError(
+                    f"OSPF instance configuration for device '{device_name}' "
+                    "must be a mapping."
+                )
+
+            required_fields = [
+                "name",
+                "admin_state",
+                "version",
+                "router_id",
+                "areas",
+            ]
+
+            for field in required_fields:
+                if field not in instance:
+                    raise DesiredStateError(
+                        f"OSPF instance for device '{device_name}' "
+                        f"is missing '{field}'."
+                    )
+
+            if not isinstance(instance["areas"], dict) or not instance["areas"]:
+                raise DesiredStateError(
+                    f"OSPF instance for device '{device_name}' "
+                    "must contain a non-empty 'areas' mapping."
+                )
+
     return data

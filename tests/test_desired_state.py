@@ -132,3 +132,29 @@ def test_desired_state_contains_network_instances():
             "ethernet-1/1.0",
             "ethernet-1/2.0",
         ]
+
+
+def test_desired_state_contains_ospf():
+    desired_state = load_desired_state(DESIRED_STATE_FILE)
+
+    expected_router_ids = {
+        "R1": "1.1.1.1",
+        "R2": "2.2.2.2",
+        "R3": "3.3.3.3",
+    }
+
+    for device_name, expected_router_id in expected_router_ids.items():
+        ospf = desired_state["devices"][device_name]["ospf"]["instance"]
+
+        assert ospf["name"] == "default"
+        assert ospf["admin_state"] == "enable"
+        assert ospf["version"] == "ospf-v2"
+        assert ospf["router_id"] == expected_router_id
+
+        assert set(
+            ospf["areas"]["0.0.0.0"]["interfaces"]
+        ) == {
+            "ethernet-1/1.0",
+            "ethernet-1/2.0",
+            "lo0.0",
+        }

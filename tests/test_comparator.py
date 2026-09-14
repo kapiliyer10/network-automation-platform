@@ -1,6 +1,7 @@
 from src.desired.comparator import (
     compare_interfaces,
     compare_network_instance_interfaces,
+    compare_ospf_configuration,
 )
 
 
@@ -112,3 +113,138 @@ def test_compare_network_instance_interfaces():
             "status": "PASS",
         },
     ]
+
+
+def test_compare_ospf_configuration():
+    desired = {
+        "instance": {
+            "name": "default",
+            "admin_state": "enable",
+            "version": "ospf-v2",
+            "router_id": "1.1.1.1",
+            "areas": {
+                "0.0.0.0": {
+                    "interfaces": {
+                        "ethernet-1/1.0": {
+                            "admin_state": "enable",
+                        },
+                        "ethernet-1/2.0": {
+                            "admin_state": "enable",
+                        },
+                        "lo0.0": {
+                            "admin_state": "enable",
+                            "passive": True,
+                        },
+                    }
+                }
+            },
+        }
+    }
+
+    actual = {
+        "name": "default",
+        "admin_state": "enable",
+        "version": "ospf-v2",
+        "router_id": "1.1.1.1",
+        "areas": {
+            "0.0.0.0": {
+                "interfaces": [
+                    {
+                        "name": "ethernet-1/1.0",
+                        "admin_state": "enable",
+                    },
+                    {
+                        "name": "ethernet-1/2.0",
+                        "admin_state": "enable",
+                    },
+                    {
+                        "name": "lo0.0",
+                        "admin_state": "enable",
+                        "passive": True,
+                    },
+                ]
+            }
+        },
+    }
+
+    results = compare_ospf_configuration(
+        device_name="R1",
+        desired_ospf=desired,
+        actual_ospf=actual,
+    )
+
+    assert results
+    assert all(
+        result["status"] == "PASS"
+        for result in results
+    )
+
+
+def test_compare_ospf_configuration_detects_drift():
+    desired = {
+        "instance": {
+            "name": "default",
+            "admin_state": "enable",
+            "version": "ospf-v2",
+            "router_id": "1.1.1.1",
+            "areas": {
+                "0.0.0.0": {
+                    "interfaces": {
+                        "ethernet-1/1.0": {
+                            "admin_state": "enable",
+                        },
+                        "ethernet-1/2.0": {
+                            "admin_state": "enable",
+                        },
+                        "lo0.0": {
+                            "admin_state": "enable",
+                            "passive": True,
+                        },
+                    }
+                }
+            },
+        }
+    }
+
+    actual = {
+        "name": "default",
+        "admin_state": "enable",
+        "version": "ospf-v2",
+        "router_id": "9.9.9.9",
+        "areas": {
+            "0.0.0.0": {
+                "interfaces": [
+                    {
+                        "name": "ethernet-1/1.0",
+                        "admin_state": "enable",
+                    },
+                    {
+                        "name": "ethernet-1/2.0",
+                        "admin_state": "enable",
+                    },
+                    {
+                        "name": "lo0.0",
+                        "admin_state": "enable",
+                        "passive": True,
+                    },
+                ]
+            }
+        },
+    }
+
+    results = compare_ospf_configuration(
+        device_name="R1",
+        desired_ospf=desired,
+        actual_ospf=actual,
+    )
+
+    drifted = [
+        result
+        for result in results
+        if result["field"] == "ospf.instance.router_id"
+    ]
+
+    assert len(drifted) == 1
+    assert drifted[0]["desired"] == "1.1.1.1"
+    assert drifted[0]["actual"] == "9.9.9.9"
+    assert drifted[0]["status"] == "DRIFT"

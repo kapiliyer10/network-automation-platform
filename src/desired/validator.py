@@ -3,6 +3,7 @@ from typing import Any
 from src.desired.comparator import (
     compare_interfaces,
     compare_network_instance_interfaces,
+    compare_ospf_configuration,
 )
 from src.network.docker_resolver import resolve_container_ip
 from src.network.gnmi_client import GNMIClient
@@ -100,3 +101,37 @@ def validate_device_network_instances(
         )
 
     return results
+
+
+def validate_device_ospf(
+    device_name: str,
+    inventory: dict[str, Any],
+    desired_state: dict[str, Any],
+    username: str,
+    password: str,
+) -> list[dict[str, Any]]:
+    """Compare desired OSPF configuration with actual state."""
+
+    device = inventory["devices"][device_name]
+
+    desired_ospf = desired_state["devices"][device_name].get("ospf")
+
+    if not desired_ospf:
+        return []
+
+    host = resolve_container_ip(device["container"])
+
+    client = GNMIClient(
+        host=host,
+        port=57401,
+        username=username,
+        password=password,
+    )
+
+    actual_ospf = client.get_ospf_configuration()
+
+    return compare_ospf_configuration(
+        device_name=device_name,
+        desired_ospf=desired_ospf,
+        actual_ospf=actual_ospf,
+    )

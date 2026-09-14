@@ -298,3 +298,37 @@ def test_gnmi_get_network_instance_interfaces():
     assert discovered["ethernet-1/1.0"] == "up"
     assert discovered["ethernet-1/2.0"] == "up"
     assert discovered["lo0.0"] == "up"
+
+
+def test_gnmi_get_ospf_configuration():
+    inventory = load_inventory(INVENTORY_FILE)
+
+    username = os.environ["GNMI_USERNAME"]
+    password = os.environ["GNMI_PASSWORD"]
+
+    host = resolve_container_ip(
+        inventory["devices"]["R1"]["container"]
+    )
+
+    client = GNMIClient(
+        host=host,
+        port=57401,
+        username=username,
+        password=password,
+    )
+
+    ospf = client.get_ospf_configuration()
+
+    assert ospf["name"] == "default"
+    assert ospf["admin_state"] == "enable"
+    assert ospf["version"] == "ospf-v2"
+    assert ospf["router_id"] == "1.1.1.1"
+
+    interfaces = {
+        interface["name"]: interface
+        for interface in ospf["areas"]["0.0.0.0"]["interfaces"]
+    }
+
+    assert interfaces["ethernet-1/1.0"]["admin_state"] == "enable"
+    assert interfaces["ethernet-1/2.0"]["admin_state"] == "enable"
+    assert interfaces["lo0.0"]["passive"] is True

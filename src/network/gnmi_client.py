@@ -275,3 +275,49 @@ class GNMIClient:
             }
             for interface in interfaces
         ]
+
+
+    def get_ospf_configuration(self) -> dict[str, Any]:
+        """Return normalized OSPF configuration state."""
+        result = self.get([
+            "/network-instance[name=default]/"
+            "protocols/ospf/instance[name=default]"
+        ])
+
+        try:
+            instance = result["notification"][0]["update"][0]["val"]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise GNMIError(
+                f"Unable to extract OSPF configuration "
+                f"from device {self.target}"
+            ) from exc
+
+        areas = {}
+
+        for area in instance.get("area", []):
+            area_id = area["area-id"]
+
+            interfaces = []
+
+            for interface in area.get("interface", []):
+                normalized = {
+                    "name": interface["interface-name"],
+                    "admin_state": interface["admin-state"],
+                }
+
+                if "passive" in interface:
+                    normalized["passive"] = interface["passive"]
+
+                interfaces.append(normalized)
+
+            areas[area_id] = {
+                "interfaces": interfaces,
+            }
+
+        return {
+            "name": "default",
+            "admin_state": instance["admin-state"],
+            "version": instance["version"].split(":")[-1],
+            "router_id": instance["router-id"],
+            "areas": areas,
+        }
