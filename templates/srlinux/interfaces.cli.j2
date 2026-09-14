@@ -11,3 +11,19 @@ set / interface {{ interface_name }} subinterface 0 ipv4 address {{ interface.ip
 set / network-instance {{ network_instance_name }} interface {{ interface }}
 {%- endfor %}
 {%- endfor %}
+
+{%- if ospf %}
+{%- set instance = ospf.instance %}
+set / network-instance default protocols ospf instance {{ instance.name }} admin-state {{ instance.admin_state }}
+set / network-instance default protocols ospf instance {{ instance.name }} version {{ instance.version }}
+set / network-instance default protocols ospf instance {{ instance.name }} router-id {{ instance.router_id }}
+
+{%- for area_id, area in instance.areas.items() %}
+{%- for interface_name, interface in area.interfaces.items() %}
+set / network-instance default protocols ospf instance {{ instance.name }} area {{ area_id }} interface {{ interface_name }}
+{%- if interface.passive %}
+set / network-instance default protocols ospf instance {{ instance.name }} area {{ area_id }} interface {{ interface_name }} passive true
+{%- endif %}
+{%- endfor %}
+{%- endfor %}
+{%- endif %}

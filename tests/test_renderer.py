@@ -11,7 +11,7 @@ TEMPLATE_FILE = (
 )
 
 
-def test_render_interface_config():
+def test_render_device_config():
     interfaces = {
         "ethernet-1/1": {
             "admin_state": "enable",
@@ -34,15 +34,16 @@ def test_render_interface_config():
         desired_interfaces=interfaces,
         desired_network_instances={},
         template_path=TEMPLATE_FILE,
+        desired_ospf={},
     )
 
     expected = (
-        "set / interface ethernet-1/1 admin-state enable\n"
-        "set / interface ethernet-1/1 subinterface 0 ipv4 admin-state enable\n"
-        "set / interface ethernet-1/1 subinterface 0 ipv4 address 10.0.12.1/30\n"
-        "set / interface ethernet-1/2 admin-state disable\n"
-        "set / interface ethernet-1/2 subinterface 0 ipv4 admin-state enable\n"
-        "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.12.2/30"
+    "set / interface ethernet-1/1 admin-state enable\n"
+    "set / interface ethernet-1/1 subinterface 0 ipv4 admin-state enable\n"
+    "set / interface ethernet-1/1 subinterface 0 ipv4 address 10.0.12.1/30\n"
+    "set / interface ethernet-1/2 admin-state disable\n"
+    "set / interface ethernet-1/2 subinterface 0 ipv4 admin-state enable\n"
+    "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.12.2/30"
     )
 
     assert result == expected
@@ -62,35 +63,56 @@ def test_render_all_device_configs():
 
     expected_configs = {
         "R1": (
-            "set / interface ethernet-1/1 admin-state enable\n"
-            "set / interface ethernet-1/1 subinterface 0 ipv4 admin-state enable\n"
-            "set / interface ethernet-1/1 subinterface 0 ipv4 address 10.0.12.1/30\n"
-            "set / interface ethernet-1/2 admin-state enable\n"
-            "set / interface ethernet-1/2 subinterface 0 ipv4 admin-state enable\n"
-            "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.31.1/30\n"
-            "set / network-instance default interface ethernet-1/1.0\n"
-            "set / network-instance default interface ethernet-1/2.0"
-        ),
-        "R2": (
-            "set / interface ethernet-1/1 admin-state enable\n"
-            "set / interface ethernet-1/1 subinterface 0 ipv4 admin-state enable\n"
-            "set / interface ethernet-1/1 subinterface 0 ipv4 address 10.0.12.2/30\n"
-            "set / interface ethernet-1/2 admin-state enable\n"
-            "set / interface ethernet-1/2 subinterface 0 ipv4 admin-state enable\n"
-            "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.23.1/30\n"
-            "set / network-instance default interface ethernet-1/1.0\n"
-            "set / network-instance default interface ethernet-1/2.0"
-        ),
-        "R3": (
-            "set / interface ethernet-1/1 admin-state enable\n"
-            "set / interface ethernet-1/1 subinterface 0 ipv4 admin-state enable\n"
-            "set / interface ethernet-1/1 subinterface 0 ipv4 address 10.0.23.2/30\n"
-            "set / interface ethernet-1/2 admin-state enable\n"
-            "set / interface ethernet-1/2 subinterface 0 ipv4 admin-state enable\n"
-            "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.31.2/30\n"
-            "set / network-instance default interface ethernet-1/1.0\n"
-            "set / network-instance default interface ethernet-1/2.0"
-        ),
+                    "set / interface ethernet-1/1 admin-state enable\n"
+                    "set / interface ethernet-1/1 subinterface 0 ipv4 admin-state enable\n"
+                    "set / interface ethernet-1/1 subinterface 0 ipv4 address 10.0.12.1/30\n"
+                    "set / interface ethernet-1/2 admin-state enable\n"
+                    "set / interface ethernet-1/2 subinterface 0 ipv4 admin-state enable\n"
+                    "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.31.1/30\n"
+                    "set / network-instance default interface ethernet-1/1.0\n"
+                    "set / network-instance default interface ethernet-1/2.0\n"
+                    "set / network-instance default protocols ospf instance default admin-state enable\n"
+                    "set / network-instance default protocols ospf instance default version ospf-v2\n"
+                    "set / network-instance default protocols ospf instance default router-id 1.1.1.1\n"
+                    "set / network-instance default protocols ospf instance default area 0.0.0.0 interface ethernet-1/1.0\n"
+                    "set / network-instance default protocols ospf instance default area 0.0.0.0 interface ethernet-1/2.0\n"
+                    "set / network-instance default protocols ospf instance default area 0.0.0.0 interface lo0.0\n"
+                    "set / network-instance default protocols ospf instance default area 0.0.0.0 interface lo0.0 passive true"
+                ),
+                "R2": (
+                    "set / interface ethernet-1/1 admin-state enable\n"
+                    "set / interface ethernet-1/1 subinterface 0 ipv4 admin-state enable\n"
+                    "set / interface ethernet-1/1 subinterface 0 ipv4 address 10.0.12.2/30\n"
+                    "set / interface ethernet-1/2 admin-state enable\n"
+                    "set / interface ethernet-1/2 subinterface 0 ipv4 admin-state enable\n"
+                    "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.23.1/30\n"
+                    "set / network-instance default interface ethernet-1/1.0\n"
+                    "set / network-instance default interface ethernet-1/2.0\n"
+                    "set / network-instance default protocols ospf instance default admin-state enable\n"
+                    "set / network-instance default protocols ospf instance default version ospf-v2\n"
+                    "set / network-instance default protocols ospf instance default router-id 2.2.2.2\n"
+                    "set / network-instance default protocols ospf instance default area 0.0.0.0 interface ethernet-1/1.0\n"
+                    "set / network-instance default protocols ospf instance default area 0.0.0.0 interface ethernet-1/2.0\n"
+                    "set / network-instance default protocols ospf instance default area 0.0.0.0 interface lo0.0\n"
+                    "set / network-instance default protocols ospf instance default area 0.0.0.0 interface lo0.0 passive true"
+                ),
+                "R3": (
+                    "set / interface ethernet-1/1 admin-state enable\n"
+                    "set / interface ethernet-1/1 subinterface 0 ipv4 admin-state enable\n"
+                    "set / interface ethernet-1/1 subinterface 0 ipv4 address 10.0.23.2/30\n"
+                    "set / interface ethernet-1/2 admin-state enable\n"
+                    "set / interface ethernet-1/2 subinterface 0 ipv4 admin-state enable\n"
+                    "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.31.2/30\n"
+                    "set / network-instance default interface ethernet-1/1.0\n"
+                    "set / network-instance default interface ethernet-1/2.0\n"
+                    "set / network-instance default protocols ospf instance default admin-state enable\n"
+                    "set / network-instance default protocols ospf instance default version ospf-v2\n"
+                    "set / network-instance default protocols ospf instance default router-id 3.3.3.3\n"
+                    "set / network-instance default protocols ospf instance default area 0.0.0.0 interface ethernet-1/1.0\n"
+                    "set / network-instance default protocols ospf instance default area 0.0.0.0 interface ethernet-1/2.0\n"
+                    "set / network-instance default protocols ospf instance default area 0.0.0.0 interface lo0.0\n"
+                    "set / network-instance default protocols ospf instance default area 0.0.0.0 interface lo0.0 passive true"
+                ),
     }
 
     assert configs == expected_configs
@@ -104,7 +126,16 @@ def test_write_device_configs(tmp_path):
             "set / interface ethernet-1/1 subinterface 0 ipv4 address 10.0.12.1/30\n"
             "set / interface ethernet-1/2 admin-state enable\n"
             "set / interface ethernet-1/2 subinterface 0 ipv4 admin-state enable\n"
-            "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.31.1/30"
+            "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.31.1/30\n"
+            "set / network-instance default interface ethernet-1/1.0\n"
+            "set / network-instance default interface ethernet-1/2.0\n"
+            "set / network-instance default protocols ospf instance default admin-state enable\n"
+            "set / network-instance default protocols ospf instance default version ospf-v2\n"
+            "set / network-instance default protocols ospf instance default router-id 1.1.1.1\n"
+            "set / network-instance default protocols ospf instance default area 0.0.0.0 interface ethernet-1/1.0\n"
+            "set / network-instance default protocols ospf instance default area 0.0.0.0 interface ethernet-1/2.0\n"
+            "set / network-instance default protocols ospf instance default area 0.0.0.0 interface lo0.0\n"
+            "set / network-instance default protocols ospf instance default area 0.0.0.0 interface lo0.0 passive true"
         ),
         "R2": (
             "set / interface ethernet-1/1 admin-state enable\n"
@@ -112,7 +143,16 @@ def test_write_device_configs(tmp_path):
             "set / interface ethernet-1/1 subinterface 0 ipv4 address 10.0.12.2/30\n"
             "set / interface ethernet-1/2 admin-state enable\n"
             "set / interface ethernet-1/2 subinterface 0 ipv4 admin-state enable\n"
-            "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.23.1/30"
+            "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.23.1/30\n"
+            "set / network-instance default interface ethernet-1/1.0\n"
+            "set / network-instance default interface ethernet-1/2.0\n"
+            "set / network-instance default protocols ospf instance default admin-state enable\n"
+            "set / network-instance default protocols ospf instance default version ospf-v2\n"
+            "set / network-instance default protocols ospf instance default router-id 2.2.2.2\n"
+            "set / network-instance default protocols ospf instance default area 0.0.0.0 interface ethernet-1/1.0\n"
+            "set / network-instance default protocols ospf instance default area 0.0.0.0 interface ethernet-1/2.0\n"
+            "set / network-instance default protocols ospf instance default area 0.0.0.0 interface lo0.0\n"
+            "set / network-instance default protocols ospf instance default area 0.0.0.0 interface lo0.0 passive true"
         ),
         "R3": (
             "set / interface ethernet-1/1 admin-state enable\n"
@@ -120,7 +160,16 @@ def test_write_device_configs(tmp_path):
             "set / interface ethernet-1/1 subinterface 0 ipv4 address 10.0.23.2/30\n"
             "set / interface ethernet-1/2 admin-state enable\n"
             "set / interface ethernet-1/2 subinterface 0 ipv4 admin-state enable\n"
-            "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.31.2/30"
+            "set / interface ethernet-1/2 subinterface 0 ipv4 address 10.0.31.2/30\n"
+            "set / network-instance default interface ethernet-1/1.0\n"
+            "set / network-instance default interface ethernet-1/2.0\n"
+            "set / network-instance default protocols ospf instance default admin-state enable\n"
+            "set / network-instance default protocols ospf instance default version ospf-v2\n"
+            "set / network-instance default protocols ospf instance default router-id 3.3.3.3\n"
+            "set / network-instance default protocols ospf instance default area 0.0.0.0 interface ethernet-1/1.0\n"
+            "set / network-instance default protocols ospf instance default area 0.0.0.0 interface ethernet-1/2.0\n"
+            "set / network-instance default protocols ospf instance default area 0.0.0.0 interface lo0.0\n"
+            "set / network-instance default protocols ospf instance default area 0.0.0.0 interface lo0.0 passive true"
         ),
     }
 

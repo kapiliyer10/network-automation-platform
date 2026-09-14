@@ -11,6 +11,7 @@ class ConfigRenderError(Exception):
 def render_device_config(
     desired_interfaces: dict[str, dict[str, Any]],
     desired_network_instances: dict[str, dict[str, Any]],
+    desired_ospf: dict[str, Any],
     template_path: str | Path,
 ) -> str:
     """Render interface configuration from desired state."""
@@ -31,6 +32,7 @@ def render_device_config(
         return template.render(
             interfaces=desired_interfaces,
             network_instances=desired_network_instances,
+            ospf=desired_ospf,
         ).strip()
 
     except Exception as exc:
@@ -53,6 +55,7 @@ def render_all_device_configs(
             desired_interfaces=interfaces,
             template_path=template_path,
             desired_network_instances=network_instances,
+            desired_ospf=device.get("ospf", {}),
         )
 
     return device_configs
