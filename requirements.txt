@@ -4,3 +4,4 @@ pygnmi
 pytest
 python-dotenv
 Jinja2==3.1.6
+ncclient==0.7.1
