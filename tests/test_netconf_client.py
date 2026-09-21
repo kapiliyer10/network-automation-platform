@@ -178,8 +178,12 @@ def test_get_interface_config():
         )
 
     assert result == {
+        "name": "ethernet-1/1",
         "admin_state": "enable",
-        "address": "10.0.12.1/30",
+        "ipv4": {
+            "admin_state": "enable",
+            "address": "10.0.12.1/30",
+        },
     }
 
 
@@ -314,8 +318,12 @@ def test_parse_interface_config():
     result = parse_interface_config(response_xml)
 
     assert result == {
+        "name": "ethernet-1/1",
         "admin_state": "enable",
-        "address": "10.0.12.1/30",
+        "ipv4": {
+            "admin_state": "enable",
+            "address": "10.0.12.1/30",
+        },
     }
 
 

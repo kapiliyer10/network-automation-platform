@@ -31,8 +31,12 @@ def test_netconf_interface_ipv4_round_trip():
     )
 
     expected = {
+        "name": "ethernet-1/1",
         "admin_state": "enable",
-        "address": "10.0.12.1/30",
+        "ipv4": {
+            "admin_state": "enable",
+            "address": "10.0.12.1/30",
+        },
     }
 
     # Safety check: do not modify R1 if it is not already

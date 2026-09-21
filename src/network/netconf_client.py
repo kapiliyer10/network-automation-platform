@@ -82,6 +82,14 @@ def parse_interface_config(
     interface = root.find(
         f".//{{{INTERFACE_NS}}}interface"
     )
+    name = interface.find(
+    f"{{{INTERFACE_NS}}}name"
+    )
+
+    if name is None or name.text is None:
+        raise NETCONFError(
+            "Interface name not found in NETCONF response"
+        )
 
     if interface is None:
         raise NETCONFError(
@@ -115,21 +123,33 @@ def parse_interface_config(
     )
 
     return {
+        "name": name.text,
         "admin_state": (
             admin_state.text
             if admin_state is not None
             else None
         ),
-        "address": (
-            addresses[0].find(
-                f"{{{INTERFACE_NS}}}ip-prefix"
-            ).text
-            if addresses
-            and addresses[0].find(
-                f"{{{INTERFACE_NS}}}ip-prefix"
-            ) is not None
-            else None
-        ),
+        "ipv4": {
+            "admin_state": (
+                ipv4.find(
+                    f"{{{INTERFACE_NS}}}admin-state"
+                ).text
+                if ipv4.find(
+                    f"{{{INTERFACE_NS}}}admin-state"
+                ) is not None
+                else None
+            ),
+            "address": (
+                addresses[0].find(
+                    f"{{{INTERFACE_NS}}}ip-prefix"
+                ).text
+                if addresses
+                and addresses[0].find(
+                    f"{{{INTERFACE_NS}}}ip-prefix"
+                ) is not None
+                else None
+            ),
+        },
     }
 
 
