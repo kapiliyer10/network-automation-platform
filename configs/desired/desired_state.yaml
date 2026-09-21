@@ -17,6 +17,7 @@ devices:
         interfaces:
           - ethernet-1/1.0
           - ethernet-1/2.0
+          - lo0.0
 
     ospf:
       instance:
@@ -53,6 +54,7 @@ devices:
         interfaces:
           - ethernet-1/1.0
           - ethernet-1/2.0
+          - lo0.0
 
     ospf:
       instance:
@@ -89,6 +91,7 @@ devices:
         interfaces:
           - ethernet-1/1.0
           - ethernet-1/2.0
+          - lo0.0
 
     ospf:
       instance:

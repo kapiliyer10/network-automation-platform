@@ -131,6 +131,7 @@ def test_desired_state_contains_network_instances():
         assert network_instances["default"]["interfaces"] == [
             "ethernet-1/1.0",
             "ethernet-1/2.0",
+            "lo0.0",
         ]
 
 
