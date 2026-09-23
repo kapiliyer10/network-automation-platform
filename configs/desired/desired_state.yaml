@@ -28,12 +28,9 @@ devices:
         areas:
           0.0.0.0:
             interfaces:
-              ethernet-1/1.0:
-                admin_state: enable
-              ethernet-1/2.0:
-                admin_state: enable
+              ethernet-1/1.0: {}
+              ethernet-1/2.0: {}
               lo0.0:
-                admin_state: enable
                 passive: true
 
   R2:

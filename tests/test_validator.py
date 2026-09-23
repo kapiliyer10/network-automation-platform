@@ -8,7 +8,10 @@ from src.inventory.loader import load_inventory
 from src.desired.validator import (
     validate_device_interfaces,
     validate_device_network_instances,
+    validate_device_interfaces_netconf,
+    validate_device_network_instances_netconf,
     validate_device_ospf,
+    validate_device_ospf_netconf,
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -173,3 +176,62 @@ def test_validate_r1_ospf_detects_drift():
     assert drifted[0]["desired"] == "9.9.9.9"
     assert drifted[0]["actual"] == "1.1.1.1"
     assert drifted[0]["status"] == "DRIFT"
+
+
+def test_validate_interfaces_netconf():
+    inventory = load_inventory(INVENTORY_FILE)
+    desired_state = load_desired_state(DESIRED_STATE_FILE)
+
+    username = os.environ["GNMI_USERNAME"]
+    password = os.environ["GNMI_PASSWORD"]
+
+    results = validate_device_interfaces_netconf(
+        device_name="R1",
+        inventory=inventory,
+        desired_state=desired_state,
+        username=username,
+        password=password,
+    )
+
+    assert results
+    assert all(
+        result["status"] == "PASS"
+        for result in results
+    )
+
+
+def test_validate_network_instances_netconf():
+    inventory = load_inventory(INVENTORY_FILE)
+    desired_state = load_desired_state(DESIRED_STATE_FILE)
+
+    results = validate_device_network_instances_netconf(
+        device_name="R1",
+        inventory=inventory,
+        desired_state=desired_state,
+        username=os.environ["GNMI_USERNAME"],
+        password=os.environ["GNMI_PASSWORD"],
+    )
+
+    assert results
+    assert all(
+        result["status"] == "PASS"
+        for result in results
+    )
+
+
+def test_validate_ospf_netconf():
+    inventory = load_inventory(INVENTORY_FILE)
+    desired_state = load_desired_state(DESIRED_STATE_FILE)
+
+    results = validate_device_ospf_netconf(
+        device_name="R1",
+        inventory=inventory,
+        desired_state=desired_state,
+        username=os.environ["GNMI_USERNAME"],
+        password=os.environ["GNMI_PASSWORD"],
+    )
+    assert results
+    assert all(
+        result["status"] == "PASS"
+        for result in results
+    )
