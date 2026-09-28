@@ -13,7 +13,9 @@ from src.desired.validator import (
 from src.inventory.loader import load_inventory
 from src.network.docker_resolver import resolve_container_ip
 from src.network.netconf_client import NETCONFClient
-
+from src.workflow import (
+    configure_and_validate_all_devices_netconf,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -137,3 +139,77 @@ def test_apply_device_netconf_config_round_trip():
         result["status"] == "PASS"
         for result in after_results
     ), f"R1 has drift after NETCONF apply: {after_results}"
+
+
+def test_apply_all_devices_netconf_round_trip():
+    inventory = load_inventory(INVENTORY_FILE)
+    desired_state = load_desired_state(DESIRED_STATE_FILE)
+
+    username = os.environ["GNMI_USERNAME"]
+    password = os.environ["GNMI_PASSWORD"]
+
+    # Safety check: every device must already match
+    # the desired state before any device is modified.
+    before_results = []
+
+    for device_name in inventory["devices"]:
+        before_results.extend(
+            validate_device_interfaces_netconf(
+                device_name=device_name,
+                inventory=inventory,
+                desired_state=desired_state,
+                username=username,
+                password=password,
+            )
+        )
+
+        before_results.extend(
+            validate_device_network_instances_netconf(
+                device_name=device_name,
+                inventory=inventory,
+                desired_state=desired_state,
+                username=username,
+                password=password,
+            )
+        )
+
+        before_results.extend(
+            validate_device_ospf_netconf(
+                device_name=device_name,
+                inventory=inventory,
+                desired_state=desired_state,
+                username=username,
+                password=password,
+            )
+        )
+
+    assert before_results
+    assert all(
+        result["status"] == "PASS"
+        for result in before_results
+    ), (
+        "Unexpected device state; refusing to modify the lab: "
+        f"{before_results}"
+    )
+
+    # Apply and validate every device.
+    results = configure_and_validate_all_devices_netconf(
+        inventory=inventory,
+        desired_state=desired_state,
+        username=username,
+        password=password,
+    )
+
+    assert set(results) == set(inventory["devices"])
+
+    after_results = [
+        result
+        for device_results in results.values()
+        for result in device_results
+    ]
+
+    assert after_results
+    assert all(
+        result["status"] == "PASS"
+        for result in after_results
+    ), f"Device drift after NETCONF apply: {results}"

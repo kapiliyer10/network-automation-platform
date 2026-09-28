@@ -70,3 +70,25 @@ def configure_and_validate_device_netconf(
         + network_instance_results
         + ospf_results
     )
+
+
+def configure_and_validate_all_devices_netconf(
+    inventory: dict[str, Any],
+    desired_state: dict[str, Any],
+    username: str,
+    password: str,
+) -> dict[str, list[dict[str, Any]]]:
+    """Apply and validate NETCONF configuration for all devices."""
+
+    results = {}
+
+    for device_name in inventory["devices"]:
+        results[device_name] = configure_and_validate_device_netconf(
+            device_name=device_name,
+            inventory=inventory,
+            desired_state=desired_state,
+            username=username,
+            password=password,
+        )
+
+    return results
