@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from dotenv import load_dotenv
 import pytest
 
 from src.inventory.loader import load_inventory
@@ -10,7 +9,7 @@ from src.network.gnmi_client import GNMIClient, GNMIError
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 INVENTORY_FILE = PROJECT_ROOT / "configs" / "inventory" / "devices.yaml"
-load_dotenv()
+
 
 
 def test_gnmi_get_hostname():
@@ -19,8 +18,8 @@ def test_gnmi_get_hostname():
     r1 = inventory["devices"]["R1"]
     host = resolve_container_ip(r1["container"])
 
-    username = os.environ["GNMI_USERNAME"]
-    password = os.environ["GNMI_PASSWORD"]
+    username = os.getenv("GNMI_USERNAME")
+    password = os.getenv("GNMI_PASSWORD")
 
     client = GNMIClient(
         host=host,

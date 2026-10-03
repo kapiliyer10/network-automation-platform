@@ -3,6 +3,8 @@ from unittest.mock import Mock, patch
 from src.workflow import (
     configure_and_validate_device_netconf,
     configure_and_validate_all_devices_netconf,
+    validate_device,
+    validate_all_devices,
 )
 
 
@@ -120,3 +122,112 @@ def test_configure_and_validate_all_devices_netconf():
 
     assert results == device_results
     assert configure_device.call_count == 3
+
+
+def test_validate_device():
+    inventory = {
+        "devices": {
+            "R1": {},
+        },
+    }
+
+    desired_state = {
+        "devices": {
+            "R1": {},
+        },
+    }
+
+    interface_results = [
+        {
+            "device": "R1",
+            "field": "admin_state",
+            "status": "PASS",
+        }
+    ]
+
+    network_instance_results = [
+        {
+            "device": "R1",
+            "field": "network_instance",
+            "status": "PASS",
+        }
+    ]
+
+    ospf_results = [
+        {
+            "device": "R1",
+            "field": "ospf.instance.router_id",
+            "status": "PASS",
+        }
+    ]
+
+    with (
+        patch(
+            "src.workflow.validate_device_interfaces",
+            return_value=interface_results,
+        ),
+        patch(
+            "src.workflow.validate_device_network_instances",
+            return_value=network_instance_results,
+        ),
+        patch(
+            "src.workflow.validate_device_ospf",
+            return_value=ospf_results,
+        ),
+    ):
+        results = validate_device(
+            device_name="R1",
+            inventory=inventory,
+            desired_state=desired_state,
+            username="test-user",
+            password="test-password",
+        )
+
+    assert results == (
+        interface_results
+        + network_instance_results
+        + ospf_results
+    )
+
+
+def test_validate_all_devices():
+    inventory = {
+        "devices": {
+            "R1": {},
+            "R2": {},
+            "R3": {},
+        },
+    }
+
+    desired_state = {
+        "devices": {
+            "R1": {},
+            "R2": {},
+            "R3": {},
+        },
+    }
+
+    device_results = {
+        "R1": [{"device": "R1", "status": "PASS"}],
+        "R2": [{"device": "R2", "status": "PASS"}],
+        "R3": [{"device": "R3", "status": "PASS"}],
+    }
+
+    with patch(
+        "src.workflow.validate_device",
+        side_effect=[
+            device_results["R1"],
+            device_results["R2"],
+            device_results["R3"],
+        ],
+    ) as validate:
+
+        results = validate_all_devices(
+            inventory=inventory,
+            desired_state=desired_state,
+            username="test-user",
+            password="test-password",
+        )
+
+    assert results == device_results
+    assert validate.call_count == 3
