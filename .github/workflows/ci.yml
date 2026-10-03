@@ -16,6 +16,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install Containerlab
+        run: bash -c "$(curl -sL https://get.containerlab.dev)"
+
+      - name: Prepare Containerlab repository path
+        run: ln -s "$GITHUB_WORKSPACE" "$HOME/network-automation-platform"
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -24,17 +30,36 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Start network lab
+        run: ./scripts/lab_up.sh
+
       - name: Lint
         run: python -m compileall src scripts
 
-      - name: Run tests
-        run: pytest -q --junitxml=test-results.xml
+      - name: Run non-integration tests
+        env:
+          GNMI_USERNAME: ${{ secrets.GNMI_USERNAME }}
+          GNMI_PASSWORD: ${{ secrets.GNMI_PASSWORD }}
+        run: pytest -q --ignore=tests/integration --junitxml=test-results.xml
+
+      - name: Run integration tests
+        env:
+          GNMI_USERNAME: ${{ secrets.GNMI_USERNAME }}
+          GNMI_PASSWORD: ${{ secrets.GNMI_PASSWORD }}
+        run: pytest -q tests/integration --junitxml=integration-test-results.xml
 
       - name: Build Docker image
         run: docker build -t network-automation-platform .
 
+      - name: Stop network lab
+        if: always()
+        run: ./scripts/lab_down.sh
+
       - name: Publish test results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: pytest-results
-          path: test-results.xml
+          path: |
+            test-results.xml
+            integration-test-results.xml
