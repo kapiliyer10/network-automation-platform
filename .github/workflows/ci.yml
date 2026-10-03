@@ -33,6 +33,12 @@ jobs:
       - name: Start network lab
         run: ./scripts/lab_up.sh
 
+      - name: Wait for OSPF convergence
+        env:
+          GNMI_USERNAME: ${{ secrets.GNMI_USERNAME }}
+          GNMI_PASSWORD: ${{ secrets.GNMI_PASSWORD }}
+        run: ./scripts/wait_for_ospf.sh
+
       - name: Lint
         run: python -m compileall src scripts
 
