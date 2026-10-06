@@ -4,7 +4,7 @@ A Python-based network automation platform that implements a closed-loop, model-
 
 **Discover → Retrieve State → Normalize → Compare Desired vs Actual → Detect Drift → Generate Configuration → Apply Configuration → Verify → Expose through REST API → Run through CI/CD**
 
-The platform uses a reproducible Containerlab-based Nokia SR Linux environment and combines gNMI, YANG, OpenConfig where applicable, NETCONF, Jinja2, Ansible, FastAPI, Docker, pytest, and GitHub Actions.
+"The platform uses gNMI and YANG with Nokia SR Linux's native models, together with NETCONF, Jinja2, Ansible, FastAPI, Docker, pytest, and GitHub Actions."
 
 ---
 
@@ -180,9 +180,8 @@ This keeps vendor/device-specific details inside the network layer and allows th
 
 - YANG
 - gNMI
-- OpenConfig where applicable
+- Nokia SR Linux native YANG models
 - NETCONF
-- RESTCONF as a secondary/deferred demonstration
 
 ### Configuration and Orchestration
 
@@ -398,7 +397,7 @@ Verify
 
 ### Milestone 8 — RESTCONF Demonstration
 
-RESTCONF remains part of the project scope as a secondary model-driven technology, but it has intentionally not been expanded into a second large implementation.
+Not implemented because RESTCONF is not supported by the SR Linux environment used for this project.
 
 **Status: Deferred / Secondary**
 
@@ -736,15 +735,15 @@ uvicorn src.api.main:app --host 0.0.0.0 --port 8000
 
 ### Endpoints
 
-| Method | Endpoint | Purpose |
-|---|---|---|
-| GET | `/` | API root/health message |
-| GET | `/devices` | List devices from inventory |
-| GET | `/devices/{id}` | Get a specific device |
-| GET | `/devices/{id}/state` | Retrieve normalized device state |
-| POST | `/devices/{id}/validate` | Validate device against desired state |
-| POST | `/devices/{id}/configure` | Reconcile a device with desired state |
-| GET | `/drift` | Validate all devices and summarize drift |
+| Method | Endpoint                  | Purpose                                  |
+| ------ | ------------------------- | ---------------------------------------- |
+| GET    | `/`                       | API root/health message                  |
+| GET    | `/devices`                | List devices from inventory              |
+| GET    | `/devices/{id}`           | Get a specific device                    |
+| GET    | `/devices/{id}/state`     | Retrieve normalized device state         |
+| POST   | `/devices/{id}/validate`  | Validate device against desired state    |
+| POST   | `/devices/{id}/configure` | Reconcile a device with desired state    |
+| GET    | `/drift`                  | Validate all devices and summarize drift |
 
 Example:
 
@@ -1217,7 +1216,7 @@ The project intentionally keeps the core implementation focused.
 
 ### Secondary / Deferred
 
-- RESTCONF as a small demonstration rather than a second large implementation
+- RESTCONF — evaluated as a secondary option but not implemented because the SR Linux environment used in this project does not support RESTCONF.
 - Additional network resource types
 - Expanded deployment automation
 
