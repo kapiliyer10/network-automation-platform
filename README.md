@@ -4,7 +4,7 @@ A Python-based network automation platform that implements a closed-loop, model-
 
 **Discover → Retrieve State → Normalize → Compare Desired vs Actual → Detect Drift → Generate Configuration → Apply Configuration → Verify → Expose through REST API → Run through CI/CD**
 
-The platform uses a reproducible Containerlab-based Nokia SR Linux environment and combines gNMI, YANG, OpenConfig where applicable, NETCONF, Jinja2, Ansible, FastAPI, Docker, pytest, and GitHub Actions.
+The platform uses a reproducible Containerlab-based Nokia SR Linux environment and combines gNMI, YANG, NETCONF, Jinja2, Ansible, FastAPI, Docker, pytest, and GitHub Actions.
 
 ---
 
@@ -14,7 +14,6 @@ The goal of this project is to build a reusable network automation platform rath
 
 The core workflow is:
 
-```text
 Desired State
       │
       ▼
@@ -51,7 +50,6 @@ Compare Desired vs Actual
               │
               ▼
              CI/CD
-```
 
 The important design principle is that configuration application is followed by explicit state retrieval and validation. A successful configuration operation by itself is not treated as proof that the desired network state has been achieved.
 
@@ -59,7 +57,6 @@ The important design principle is that configuration application is followed by 
 
 ## 2. Architecture
 
-```text
                               FastAPI
                                  │
                                  ▼
@@ -75,7 +72,7 @@ The important design principle is that configuration application is followed by 
               │                  │                  │
               ▼                  ▼                  ▼
         YANG / device       Desired State       NETCONF/YANG
-        data retrieval          │
+        data retrieval           │
               │                  │
               └──────────────┬───┘
                              ▼
@@ -86,11 +83,10 @@ The important design principle is that configuration application is followed by 
                        SR Linux Devices
                              │
                          Containerlab
-```
+
 
 Ansible sits beside the Python application as an orchestration layer:
 
-```text
                  Ansible
                     │
                     ▼
@@ -98,7 +94,6 @@ Ansible sits beside the Python application as an orchestration layer:
                     │
                     ▼
                  Devices
-```
 
 Python owns the application and network-automation business logic. Ansible invokes and orchestrates the existing Python workflow instead of duplicating networking logic.
 
@@ -110,7 +105,6 @@ A key architectural feature is the separation of device-specific responses from 
 
 The intended pattern is:
 
-```text
 Device
   │
   ▼
@@ -130,21 +124,18 @@ Normalized application model
   ├── Reporting
   ├── Configuration workflow
   └── REST API
-```
+
 
 Examples of normalized data include:
 
-```json
 {
   "name": "ethernet-1/1",
   "admin_state": "enable",
   "oper_state": "up"
 }
-```
 
 and:
 
-```json
 {
   "interface": "ethernet-1/1",
   "subinterface_index": 0,
@@ -152,7 +143,7 @@ and:
   "origin": "static",
   "status": "preferred"
 }
-```
+
 
 This keeps vendor/device-specific details inside the network layer and allows the rest of the application to operate on stable internal structures.
 
@@ -178,11 +169,9 @@ This keeps vendor/device-specific details inside the network layer and allows th
 
 ### Model-Driven Network Management
 
-- YANG
+- Nokia SR Linux native YANG models
 - gNMI
-- OpenConfig where applicable
 - NETCONF
-- RESTCONF as a secondary/deferred demonstration
 
 ### Configuration and Orchestration
 
@@ -208,13 +197,11 @@ This keeps vendor/device-specific details inside the network layer and allows th
 
 The project uses a three-router Nokia SR Linux topology running in Containerlab.
 
-```text
                  R1
                 /  \
                /    \
               /      \
              R2------R3
-```
 
 The lab provides:
 
@@ -227,31 +214,25 @@ The lab provides:
 
 The Containerlab topology is:
 
-```text
 topology/srl-lab.clab.yml
-```
+
 
 The startup configurations are:
 
-```text
 configs/srl/
 ├── R1.cli
 ├── R2.cli
 └── R3.cli
-```
 
 The lab can be brought up and down using the project scripts:
 
-```bash
 ./scripts/lab_up.sh
 ./scripts/lab_down.sh
-```
 
 ---
 
 ## 6. Repository Structure
 
-```text
 .
 ├── ansible/
 │   ├── ansible.cfg
@@ -318,7 +299,6 @@ The lab can be brought up and down using the project scripts:
 ├── .gitignore
 ├── Dockerfile
 └── requirements.txt
-```
 
 ---
 
@@ -380,7 +360,6 @@ Implemented the primary model-driven configuration workflow using NETCONF + YANG
 
 The workflow is:
 
-```text
 Desired State
       ↓
 NETCONF Configuration Generation
@@ -392,13 +371,12 @@ commit
 Retrieve Actual State
       ↓
 Verify
-```
 
 **Status: Complete**
 
 ### Milestone 8 — RESTCONF Demonstration
 
-RESTCONF remains part of the project scope as a secondary model-driven technology, but it has intentionally not been expanded into a second large implementation.
+Not implemented because RESTCONF is not supported by the SR Linux environment used for this project.
 
 **Status: Deferred / Secondary**
 
@@ -426,7 +404,6 @@ The network lab remains separate from the automation application.
 
 Implemented GitHub Actions to:
 
-```text
 Git Push / Pull Request
         ↓
 Compile / Lint Check
@@ -438,7 +415,6 @@ NETCONF Integration Tests
 Docker Build
         ↓
 Publish Test Results
-```
 
 The CI workflow also waits for OSPF convergence before live integration testing.
 
@@ -448,7 +424,6 @@ The CI workflow also waits for OSPF convergence before live integration testing.
 
 Combined the major components into the closed-loop automation workflow:
 
-```text
 Desired State
       ↓
 Discover Actual State
@@ -464,7 +439,6 @@ Retrieve State
 Verify
       ↓
 PASS / FAIL
-```
 
 **Status: Complete**
 
@@ -474,9 +448,7 @@ PASS / FAIL
 
 Device inventory is stored in:
 
-```text
 configs/inventory/devices.yaml
-```
 
 The inventory identifies logical devices and their Containerlab-related information.
 
@@ -488,9 +460,8 @@ The application resolves current management endpoints dynamically from the runni
 
 The intended network state is stored in:
 
-```text
 configs/desired/desired_state.yaml
-```
+
 
 The desired state covers resources such as:
 
@@ -510,51 +481,41 @@ The state layer retrieves device state through the gNMI client.
 
 The normalized device-state layer exposes:
 
-```text
 hostname
 interfaces
 ip_addresses
 routes
 ospf_neighbors
 ospf
-```
 
 Interface state includes fields such as:
 
-```text
 name
 admin_state
 oper_state
-```
 
 IPv4 address data includes fields such as:
 
-```text
 interface
 subinterface_index
 ip_address
 origin
 status
-```
 
 Route data includes fields such as:
 
-```text
 prefix
 active
 metric
 preference
 route_type
-```
 
 OSPF neighbor data includes:
 
-```text
 interface
 router_id
 address
 state
-```
 
 ---
 
@@ -562,7 +523,6 @@ state
 
 The comparison workflow evaluates:
 
-```text
 Desired State
       +
 Actual State
@@ -570,23 +530,19 @@ Actual State
 Comparison Engine
       ↓
 PASS / DRIFT
-```
 
 A controlled mismatch can look like:
 
-```text
 Interface: ethernet-1/2
 
 Desired:  enable
 Actual:   disable
 Status:   DRIFT
-```
 
 The reporting layer summarizes per-device and overall results.
 
 Example:
 
-```json
 {
   "devices": {
     "R1": {
@@ -610,7 +566,6 @@ Example:
   },
   "overall_status": "DRIFT"
 }
-```
 
 ---
 
@@ -622,25 +577,19 @@ The repository contains two configuration-generation paths.
 
 The Jinja2 renderer generates SR Linux CLI configuration.
 
-```text
 Desired State
       ↓
 Jinja2 Template
       ↓
 Generated CLI Configuration
-```
 
 Template:
 
-```text
 templates/srlinux/interfaces.cli.j2
-```
 
 Generated configuration can be written under:
 
-```text
 generated/
-```
 
 The CLI-rendering path is separate from the primary NETCONF application path.
 
@@ -663,16 +612,14 @@ NETCONF is the primary model-driven configuration mechanism in the completed wor
 
 The application uses NETCONF operations such as:
 
-```text
 edit-config
 commit
-```
+
 
 The client also retrieves configuration/state needed for round-trip verification.
 
 The design goal is:
 
-```text
 Desired State
       ↓
 Model-driven configuration
@@ -684,7 +631,6 @@ Actual State
 Comparison
       ↓
 PASS / DRIFT
-```
 
 ---
 
@@ -694,19 +640,14 @@ Ansible is used for orchestration rather than as the location of the core networ
 
 The main playbook is:
 
-```text
 ansible/configure_devices.yml
-```
 
 Run it with:
 
-```bash
 ansible-playbook -i ansible/inventory.ini ansible/configure_devices.yml
-```
 
 The playbook invokes the existing Python workflow:
 
-```text
 Ansible
    ↓
 python -m scripts.run_device
@@ -714,7 +655,6 @@ python -m scripts.run_device
 Python automation engine
    ↓
 Device
-```
 
 This keeps state handling, comparison, configuration generation, NETCONF operations, validation, and reporting centralized in Python.
 
@@ -724,15 +664,11 @@ This keeps state handling, comparison, configuration generation, NETCONF operati
 
 The API is implemented in:
 
-```text
 src/api/main.py
-```
 
 Start the API directly with:
 
-```bash
 uvicorn src.api.main:app --host 0.0.0.0 --port 8000
-```
 
 ### Endpoints
 
@@ -748,39 +684,27 @@ uvicorn src.api.main:app --host 0.0.0.0 --port 8000
 
 Example:
 
-```bash
 curl http://127.0.0.1:8000/
-```
 
 List devices:
 
-```bash
 curl http://127.0.0.1:8000/devices
-```
 
 Get device state:
 
-```bash
 curl http://127.0.0.1:8000/devices/R1/state
-```
 
 Validate a device:
 
-```bash
 curl -X POST http://127.0.0.1:8000/devices/R1/validate
-```
 
 Reconcile a device:
 
-```bash
 curl -X POST http://127.0.0.1:8000/devices/R1/configure
-```
 
 Check overall drift:
 
-```bash
 curl http://127.0.0.1:8000/drift
-```
 
 ### Important API behavior
 
@@ -798,13 +722,10 @@ The automation application is packaged using Docker.
 
 ### Build
 
-```bash
 docker build -t network-automation-platform .
-```
 
 ### Run
 
-```bash
 docker run -d \
   --name network-automation-api \
   --network clab \
@@ -812,13 +733,10 @@ docker run -d \
   -v /var/run/docker.sock:/var/run/docker.sock \
   --env-file .env \
   network-automation-platform
-```
 
 The image runs:
 
-```text
 uvicorn src.api.main:app
-```
 
 on port `8000`.
 
@@ -830,15 +748,11 @@ The Docker image contains the Python application and its required supporting lib
 
 The repository contains:
 
-```text
 .env.example
-```
 
 Create your local environment file with:
 
-```bash
 cp .env.example .env
-```
 
 Set the required credentials in `.env`.
 
@@ -848,10 +762,8 @@ Do not commit credentials or other secrets.
 
 GitHub Actions receives the required gNMI credentials through repository secrets:
 
-```text
 GNMI_USERNAME
 GNMI_PASSWORD
-```
 
 ---
 
@@ -861,21 +773,15 @@ The project uses pytest at both application and live network-integration levels.
 
 ### Application/non-integration tests
 
-```bash
 pytest -q --ignore=tests/integration
-```
 
 ### Integration tests
 
-```bash
 pytest -q tests/integration
-```
 
 ### Full suite
 
-```bash
 pytest -q
-```
 
 The integration tests use the real Containerlab SR Linux environment and validate live NETCONF round trips.
 
@@ -899,21 +805,15 @@ Coverage areas include:
 
 The complete Docker-hosted pytest run was:
 
-```text
 83 passed in 75.71s
-```
 
 The live NETCONF integration suite was:
 
-```text
 8 passed in 63.68s
-```
 
 A focused application/API/workflow/reporting run was:
 
-```text
 12 passed in 1.00s
-```
 
 These numbers reflect the verified project state during final integration testing and may change as tests are added or modified.
 
@@ -923,9 +823,7 @@ These numbers reflect the verified project state during final integration testin
 
 The GitHub Actions workflow is:
 
-```text
 .github/workflows/ci.yml
-```
 
 It runs on:
 
@@ -934,7 +832,6 @@ It runs on:
 
 The pipeline is:
 
-```text
 Checkout repository
         ↓
 Install Containerlab
@@ -960,7 +857,6 @@ Build Docker image
 Stop network lab
         ↓
 Publish pytest result artifacts
-```
 
 The OSPF readiness step prevents live integration tests from starting before the routing control plane has converged.
 
@@ -970,9 +866,7 @@ The OSPF readiness step prevents live integration tests from starting before the
 
 The project includes:
 
-```text
 scripts/wait_for_ospf.sh
-```
 
 Before the CI integration tests execute, this script waits for the three-router OSPF topology to become ready.
 
@@ -988,19 +882,15 @@ The strongest project demonstration is a controlled drift-and-reconciliation wor
 
 ### Step 1 — Verify clean state
 
-```bash
 curl http://127.0.0.1:8000/drift
-```
 
 Expected logical result:
 
-```text
 R1  PASS
 R2  PASS
 R3  PASS
 
 Overall: PASS
-```
 
 ### Step 2 — Introduce controlled drift
 
@@ -1008,35 +898,28 @@ A controlled change can be made to an existing device setting so that the actual
 
 Example:
 
-```text
 R1
 ethernet-1/2
 
 Desired admin state: enable
 Actual admin state:  disable
-```
 
 The drift endpoint then reports:
 
-```text
 R1  DRIFT
 R2  PASS
 R3  PASS
 
 Overall: DRIFT
-```
 
 ### Step 3 — Reconcile
 
 Run:
 
-```bash
 curl -X POST http://127.0.0.1:8000/devices/R1/configure
-```
 
 The workflow:
 
-```text
 Desired State
       ↓
 Build NETCONF configuration
@@ -1048,25 +931,20 @@ commit
 Retrieve actual state
       ↓
 Validate
-```
 
 ### Step 4 — Verify recovery
 
 Run:
 
-```bash
 curl http://127.0.0.1:8000/drift
-```
 
 Expected result after successful reconciliation:
 
-```text
 R1  PASS
 R2  PASS
 R3  PASS
 
 Overall: PASS
-```
 
 This demonstrates the project's closed-loop behavior:
 
@@ -1090,61 +968,43 @@ Install:
 
 ### Clone the repository
 
-```bash
 git clone https://github.com/kapiliyer10/network-automation-platform.git
 cd network-automation-platform
-```
 
 ### Create a virtual environment
 
-```bash
 python3.12 -m venv .venv
 source .venv/bin/activate
-```
 
 ### Install dependencies
 
-```bash
 pip install -r requirements.txt
-```
 
 ### Create local environment configuration
 
-```bash
 cp .env.example .env
-```
 
 Populate `.env` with the required credentials.
 
 ### Start the network lab
 
-```bash
 ./scripts/lab_up.sh
-```
 
 ### Wait for OSPF convergence
 
-```bash
 ./scripts/wait_for_ospf.sh
-```
 
 ### Run tests
 
-```bash
 pytest -q
-```
 
 ### Start FastAPI
 
-```bash
 uvicorn src.api.main:app --host 0.0.0.0 --port 8000
-```
 
 ### Stop the lab
 
-```bash
 ./scripts/lab_down.sh
-```
 
 ---
 
@@ -1152,9 +1012,7 @@ uvicorn src.api.main:app --host 0.0.0.0 --port 8000
 
 A device-specific workflow can also be invoked from the command line:
 
-```bash
 python -m scripts.run_device --device R1
-```
 
 The command executes the Python automation workflow and reports the resulting validation records.
 
@@ -1174,9 +1032,7 @@ The completed project uses gNMI as the primary state-discovery mechanism and exp
 
 NETCONF provides the primary model-driven configuration path and supports the closed-loop requirement:
 
-```text
 Configure → Retrieve → Verify
-```
 
 ### Why keep Ansible?
 
@@ -1246,7 +1102,6 @@ This project demonstrates the ability to build and integrate a network automatio
 
 The core story is:
 
-```text
 Network Device
       ↓
 Model-Driven State Discovery
@@ -1268,7 +1123,6 @@ Ansible Orchestration
 Docker
       ↓
 CI/CD
-```
 
 The result is a reusable **Network Automation / NetDevOps platform** rather than a set of isolated networking scripts.
 
