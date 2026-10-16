@@ -34,6 +34,7 @@ topology:
         - ip link set eth1 up
         - ip address replace 10.0.24.2/30 dev eth1
         - ip route replace default via 10.0.24.1
+        - sh -c 'python3 -u /app/udp_server.py > /tmp/udp_server.log 2>&1 &'
 
   links:
     - endpoints: ["R1:ethernet-1/1", "R2:ethernet-1/1"]
