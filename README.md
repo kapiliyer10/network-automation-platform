@@ -246,6 +246,44 @@ The lab can be brought up and down using the project scripts:
 ./scripts/lab_down.sh
 ```
 
+### Supplementary Endpoint Test Topology
+
+The original `srl-lab` remains the primary three-router lab for network automation and device-management workflows.
+
+A separate `srl-expanded` topology is available for endpoint-based testing in Project 2. It retains the three-router network and adds two Linux endpoints connected to R1 and R2.
+
+The Containerlab topology definition is located at topology/srl-expanded.clab.yml.
+
+```text
+H1                 H2
+ |                  |
+ R1----------------R2
+  \                /
+   \              /
+        R3
+```
+
+- **H1** connects to R1 through `ethernet-1/3` and uses `10.0.14.2/30`.
+- **H2** connects to R2 through `ethernet-1/3` and uses `10.0.24.2/30`.
+- Both endpoints use the custom `network-test-endpoint:1.0` Docker image, built from `topology/tcp-endpoint/Dockerfile`.
+
+Build the endpoint image from the Project 1 repository root:
+
+```bash
+docker build -t network-test-endpoint:1.0 topology/tcp-endpoint
+```
+
+Use the dedicated scripts to start and stop the expanded lab:
+
+```bash
+./scripts/lab_expanded_up.sh
+./scripts/lab_expanded_down.sh
+```
+
+The expanded topology currently supports TCP and UDP application-level connectivity tests and initial TCP throughput testing using `iperf3`.
+
+This is a supplementary testing environment, not a replacement for `srl-lab`. The two lab profiles are run separately when local resource constraints prevent both from running simultaneously.
+
 ---
 
 ## 6. Repository Structure

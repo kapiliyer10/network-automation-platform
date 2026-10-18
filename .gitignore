@@ -13,6 +13,7 @@ htmlcov/
 # Containerlab generated runtime files
 configs/clab-srl-lab/
 topology/clab-srl-lab/
+topology/clab-srl-expanded/
 .env
 
 # Generated configuration files

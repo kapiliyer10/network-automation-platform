@@ -1,6 +1,6 @@
 FROM python:3.12-alpine
 
-RUN apk add --no-cache iproute2
+RUN apk add --no-cache iproute2 iperf3
 
 WORKDIR /app
 COPY tcp_server.py /app/tcp_server.py
