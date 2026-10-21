@@ -246,45 +246,60 @@ The lab can be brought up and down using the project scripts:
 ./scripts/lab_down.sh
 ```
 
-### Supplementary Endpoint Test Topology
+### Expanded Topology Used by Project 2
 
-The original `srl-lab` remains the primary three-router lab for network automation and device-management workflows.
+The original `srl-lab` remains Project 1's primary three-router topology for
+network automation and device-management workflows.
 
-A separate `srl-expanded` topology is available for endpoint-based testing in Project 2. It retains the three-router network and adds two Linux endpoints connected to R1 and R2.
+Project 2 uses the dedicated `srl-expanded` topology for its network-validation
+suite. It retains the three Nokia SR Linux routers and adds two Linux endpoints,
+H1 and H2, for end-to-end traffic testing.
 
-The Containerlab topology definition is located at topology/srl-expanded.clab.yml.
+The Containerlab topology definition is:
 
-```text
-H1                 H2
- |                  |
- R1----------------R2
-  \                /
-   \              /
-        R3
-```
+    topology/srl-expanded.clab.yml
+
+The router startup configurations are stored under `configs/srl-expanded/`:
+
+- `R1.cli`
+- `R2.cli`
+- `R3.cli`
+
+Topology:
+
+    H1                 H2
+     |                  |
+     R1----------------R2
+      \                /
+       \              /
+            R3
 
 - **H1** connects to R1 through `ethernet-1/3` and uses `10.0.14.2/30`.
 - **H2** connects to R2 through `ethernet-1/3` and uses `10.0.24.2/30`.
-- Both endpoints use the custom `network-test-endpoint:1.0` Docker image, built from `topology/tcp-endpoint/Dockerfile`.
+- Both endpoints use the custom `network-test-endpoint:1.0` Docker image,
+  built from `topology/tcp-endpoint/Dockerfile`.
+- Router container names use the `clab-srl-expanded-` prefix.
 
 Build the endpoint image from the Project 1 repository root:
 
-```bash
-docker build -t network-test-endpoint:1.0 topology/tcp-endpoint
-```
+    docker build -t network-test-endpoint:1.0 topology/tcp-endpoint
 
-Use the dedicated scripts to start and stop the expanded lab:
+Deploy the expanded topology:
 
-```bash
-./scripts/lab_expanded_up.sh
-./scripts/lab_expanded_down.sh
-```
+    ./scripts/lab_expanded_up.sh
 
-The expanded topology currently supports TCP and UDP application-level connectivity tests and initial TCP throughput testing using `iperf3`.
+Stop the expanded topology after testing:
 
-This is a supplementary testing environment, not a replacement for `srl-lab`. The two lab profiles are run separately when local resource constraints prevent both from running simultaneously.
+    ./scripts/lab_expanded_down.sh
 
----
+Project 2 uses this topology for router connectivity, interface and protocol
+validation, OSPF and route checks, LLDP neighbor validation, failure and
+recovery testing, TCP/UDP application exchanges, performance measurement,
+latency testing, controlled traffic impairments, and packet capture.
+
+Project 1 provides the network automation implementation and lab infrastructure.
+Project 2 consumes the expanded lab to validate observable network behavior.
+The two projects maintain separate responsibilities, repositories, and workflows.
 
 ## 6. Repository Structure
 
