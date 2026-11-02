@@ -1,4 +1,5 @@
 import os
+import time
 from pathlib import Path
 import pytest
 
@@ -9,6 +10,25 @@ from src.network.gnmi_client import GNMIClient, GNMIError
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 INVENTORY_FILE = PROJECT_ROOT / "configs" / "inventory" / "devices.yaml"
+
+def wait_for_ospf_neighbors(fetch_neighbors, expected_count, timeout=30):
+    """Wait until the expected number of OSPF neighbors are Full."""
+    deadline = time.monotonic() + timeout
+    neighbors = []
+
+    while time.monotonic() < deadline:
+        neighbors = fetch_neighbors()
+
+        if (
+            len(neighbors) == expected_count
+            and all(neighbor["state"] == "full" for neighbor in neighbors)
+        ):
+            return neighbors
+
+        time.sleep(1)
+
+    return neighbors
+
 
 
 
@@ -133,7 +153,10 @@ def test_gnmi_get_ospf_neighbors():
         password=password,
     )
 
-    neighbors = client.get_ospf_neighbors("ethernet-1/1.0")
+    neighbors = wait_for_ospf_neighbors(
+        lambda: client.get_ospf_neighbors("ethernet-1/1.0"),
+        expected_count=1,
+    )
 
     assert len(neighbors) == 1
     assert neighbors[0]["router_id"] == "2.2.2.2"
@@ -157,7 +180,10 @@ def test_gnmi_get_all_ospf_neighbors():
             password=password,
         )
 
-        neighbors = client.get_all_ospf_neighbors()
+        neighbors = wait_for_ospf_neighbors(
+            client.get_all_ospf_neighbors,
+            expected_count=2,
+        )
 
         assert len(neighbors) == 2, (
             f"{device_name} should have 2 OSPF neighbors, "
@@ -330,4 +356,4 @@ def test_gnmi_get_ospf_configuration():
 
     assert interfaces["ethernet-1/1.0"]["admin_state"] == "enable"
     assert interfaces["ethernet-1/2.0"]["admin_state"] == "enable"
-    assert interfaces["lo0.0"]["passive"] is True
+    assert set(interfaces) == {"ethernet-1/1.0", "ethernet-1/2.0"}

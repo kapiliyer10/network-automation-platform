@@ -5,7 +5,11 @@ from src.network.netconf_client import (
     parse_interface_ipv4,
     parse_interface_config,
     parse_network_instance_interfaces,
-    parse_ospf_configuration,)
+    parse_ospf_configuration,
+    parse_bgp_configuration,
+    parse_routing_policy_configuration,
+    BGP_NS,
+    ROUTING_POLICY_NS,)
 
 def test_get_capabilities():
     fake_session = type(
@@ -677,4 +681,270 @@ def test_build_ospf_area_interface_edit_config():
         "<interface-name>ethernet-1/1.0</interface-name>"
         in result
     )
-    assert "<passive>" not in result
+    assert '<passive nc:operation="remove"/>' in result
+
+
+def test_build_bgp_edit_config():
+    client = NETCONFClient(
+        host="test-host",
+        port=830,
+        username="test-user",
+        password="test-password",
+    )
+
+    desired_bgp = {
+        "autonomous_system": 65001,
+        "router_id": "1.1.1.1",
+        "afi_safi": {
+            "ipv4_unicast": {
+                "admin_state": "enable",
+            },
+        },
+        "peer_groups": {
+            "to-r2": {"peer_as": 65002},
+            "to-r3": {"peer_as": 65003},
+        },
+        "neighbors": {
+            "10.0.12.2": {"peer_group": "to-r2"},
+            "10.0.31.2": {"peer_group": "to-r3"},
+        },
+        "import_policy": "allow-bgp-loopbacks",
+        "export_policy": "allow-bgp-loopbacks",
+    }
+
+    result = client.build_bgp_edit_config(
+        network_instance_name="default",
+        desired_bgp=desired_bgp,
+    )
+
+    import xml.etree.ElementTree as ET
+
+    root = ET.fromstring(result)
+
+    bgp = root.find(f".//{{{BGP_NS}}}bgp")
+    assert bgp is not None
+
+    assert bgp.find(f"{{{BGP_NS}}}autonomous-system").text == "65001"
+    assert bgp.find(f"{{{BGP_NS}}}router-id").text == "1.1.1.1"
+
+    afi_safi = bgp.find(f"{{{BGP_NS}}}afi-safi")
+    assert afi_safi is not None
+    assert (
+        afi_safi.find(f"{{{BGP_NS}}}afi-safi-name").text.strip()
+        == "srl_nokia-common:ipv4-unicast"
+    )
+    assert afi_safi.find(f"{{{BGP_NS}}}admin-state").text == "enable"
+
+    groups = bgp.findall(f"{{{BGP_NS}}}group")
+    assert len(groups) == 2
+
+    neighbors = bgp.findall(f"{{{BGP_NS}}}neighbor")
+    assert len(neighbors) == 2
+
+    assert len(bgp.findall(f"{{{BGP_NS}}}import-policy")) == 1
+    assert len(bgp.findall(f"{{{BGP_NS}}}export-policy")) == 1
+
+
+def test_build_routing_policy_edit_config():
+    client = NETCONFClient(
+        host="test-host",
+        port=830,
+        username="test-user",
+        password="test-password",
+    )
+
+    desired_routing_policies = {
+        "prefix_sets": {
+            "bgp-loopbacks": {
+                "prefixes": [
+                    {
+                        "prefix": "10.255.0.1/32",
+                        "mask_length_range": "exact",
+                    },
+                    {
+                        "prefix": "10.255.0.2/32",
+                        "mask_length_range": "exact",
+                    },
+                    {
+                        "prefix": "10.255.0.3/32",
+                        "mask_length_range": "exact",
+                    },
+                ],
+            },
+        },
+        "policies": {
+            "allow-bgp-loopbacks": {
+                "default_action": "reject",
+                "statements": [
+                    {
+                        "sequence": 10,
+                        "match": {
+                            "prefix_set": "bgp-loopbacks",
+                            "match_set_options": "any",
+                        },
+                        "action": "accept",
+                    },
+                ],
+            },
+        },
+    }
+
+    result = client.build_routing_policy_edit_config(
+        desired_routing_policies
+    )
+
+    import xml.etree.ElementTree as ET
+
+    root = ET.fromstring(result)
+
+    routing_policy = root.find(
+        f"{{{ROUTING_POLICY_NS}}}routing-policy"
+    )
+    assert routing_policy is not None
+
+    prefix_set = routing_policy.find(
+        f"{{{ROUTING_POLICY_NS}}}prefix-set"
+    )
+    assert prefix_set is not None
+    assert len(prefix_set.findall(f"{{{ROUTING_POLICY_NS}}}prefix")) == 3
+
+    policy = routing_policy.find(
+        f"{{{ROUTING_POLICY_NS}}}policy"
+    )
+    assert policy is not None
+
+    assert (
+        policy.find(
+            f"{{{ROUTING_POLICY_NS}}}default-action/"
+            f"{{{ROUTING_POLICY_NS}}}policy-result"
+        ).text
+        == "reject"
+    )
+
+    statement = policy.find(
+        f"{{{ROUTING_POLICY_NS}}}statement"
+    )
+    assert statement is not None
+    assert statement.find(f"{{{ROUTING_POLICY_NS}}}name").text == "10"
+
+
+def test_parse_bgp_configuration():
+    response_xml = """
+    <data xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+        <network-instance
+            xmlns="urn:nokia.com:srlinux:net-inst:network-instance">
+            <name>default</name>
+            <protocols>
+                <bgp xmlns="urn:nokia.com:srlinux:bgp:bgp">
+                    <autonomous-system>65001</autonomous-system>
+                    <router-id>1.1.1.1</router-id>
+                    <export-policy>allow-bgp-loopbacks</export-policy>
+                    <import-policy>allow-bgp-loopbacks</import-policy>
+                    <afi-safi>
+                        <afi-safi-name
+                            xmlns:srl_nokia-common="urn:nokia.com:srlinux:general:common">
+                            srl_nokia-common:ipv4-unicast
+                        </afi-safi-name>
+                        <admin-state>enable</admin-state>
+                    </afi-safi>
+                    <group>
+                        <group-name>to-r2</group-name>
+                        <peer-as>65002</peer-as>
+                    </group>
+                    <neighbor>
+                        <peer-address>10.0.12.2</peer-address>
+                        <peer-group>to-r2</peer-group>
+                    </neighbor>
+                </bgp>
+            </protocols>
+        </network-instance>
+    </data>
+    """
+
+    result = parse_bgp_configuration(
+        response_xml,
+        "default",
+    )
+
+    assert result == {
+        "autonomous_system": 65001,
+        "router_id": "1.1.1.1",
+        "afi_safi": {
+            "ipv4_unicast": {
+                "admin_state": "enable",
+            },
+        },
+        "peer_groups": {
+            "to-r2": {"peer_as": 65002},
+        },
+        "neighbors": {
+            "10.0.12.2": {"peer_group": "to-r2"},
+        },
+        "import_policy": ["allow-bgp-loopbacks"],
+        "export_policy": ["allow-bgp-loopbacks"],
+    }
+
+
+def test_parse_routing_policy_configuration():
+    response_xml = """
+    <data xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+        <routing-policy
+            xmlns="urn:nokia.com:srlinux:plcy:routing-policy">
+            <prefix-set>
+                <name>bgp-loopbacks</name>
+                <prefix>
+                    <ip-prefix>10.255.0.1/32</ip-prefix>
+                    <mask-length-range>exact</mask-length-range>
+                </prefix>
+            </prefix-set>
+            <policy>
+                <name>allow-bgp-loopbacks</name>
+                <default-action>
+                    <policy-result>reject</policy-result>
+                </default-action>
+                <statement>
+                    <name>10</name>
+                    <match>
+                        <prefix>
+                            <prefix-set>bgp-loopbacks</prefix-set>
+                            <match-set-options>any</match-set-options>
+                        </prefix>
+                    </match>
+                    <action>
+                        <policy-result>accept</policy-result>
+                    </action>
+                </statement>
+            </policy>
+        </routing-policy>
+    </data>
+    """
+
+    result = parse_routing_policy_configuration(response_xml)
+
+    assert result == {
+        "prefix_sets": {
+            "bgp-loopbacks": {
+                "prefixes": [
+                    {
+                        "prefix": "10.255.0.1/32",
+                        "mask_length_range": "exact",
+                    },
+                ],
+            },
+        },
+        "policies": {
+            "allow-bgp-loopbacks": {
+                "default_action": "reject",
+                "statements": [
+                    {
+                        "sequence": 10,
+                        "match": {
+                            "prefix_set": "bgp-loopbacks",
+                            "match_set_options": "any",
+                        },
+                        "action": "accept",
+                    },
+                ],
+            },
+        },
+    }

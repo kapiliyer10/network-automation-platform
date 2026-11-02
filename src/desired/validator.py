@@ -4,10 +4,12 @@ from src.desired.comparator import (
     compare_interfaces,
     compare_network_instance_interfaces,
     compare_ospf_configuration,
+    compare_bgp_configuration,
+    compare_routing_policy_configuration,
 )
 from src.network.docker_resolver import resolve_container_ip
 from src.network.gnmi_client import GNMIClient
-from src.network.netconf_client import NETCONFClient
+from src.network.netconf_client import NETCONFClient, NETCONFError
 
 
 def validate_device_interfaces(
@@ -267,4 +269,75 @@ def validate_device_ospf_netconf(
         device_name=device_name,
         desired_ospf=desired_ospf,
         actual_ospf=actual_ospf,
+    )
+
+def validate_device_bgp_netconf(
+    device_name: str,
+    inventory: dict[str, Any],
+    desired_state: dict[str, Any],
+    username: str,
+    password: str,
+) -> list[dict[str, Any]]:
+    """Compare desired BGP configuration with NETCONF state."""
+
+    device = inventory["devices"][device_name]
+    desired_bgp = desired_state["devices"][device_name].get("bgp")
+
+    if not desired_bgp:
+        return []
+
+    host = resolve_container_ip(device["container"])
+
+    client = NETCONFClient(
+        host=host,
+        port=830,
+        username=username,
+        password=password,
+    )
+
+    try:
+        actual_bgp = client.get_bgp_configuration("default")
+    except NETCONFError:
+        actual_bgp = {}
+
+    return compare_bgp_configuration(
+        device_name=device_name,
+        desired_bgp=desired_bgp,
+        actual_bgp=actual_bgp,
+    )
+
+
+def validate_routing_policies_netconf(
+    device_name: str,
+    inventory: dict[str, Any],
+    desired_state: dict[str, Any],
+    username: str,
+    password: str,
+) -> list[dict[str, Any]]:
+    """Compare desired routing policies with NETCONF state."""
+
+    desired_policies = desired_state.get("routing_policies")
+
+    if not desired_policies:
+        return []
+
+    device = inventory["devices"][device_name]
+    host = resolve_container_ip(device["container"])
+
+    client = NETCONFClient(
+        host=host,
+        port=830,
+        username=username,
+        password=password,
+    )
+
+    try:
+        actual_policies = client.get_routing_policy_configuration()
+    except NETCONFError:
+        actual_policies = {}
+
+    return compare_routing_policy_configuration(
+        device_name=device_name,
+        desired_routing_policies=desired_policies,
+        actual_routing_policies=actual_policies,
     )

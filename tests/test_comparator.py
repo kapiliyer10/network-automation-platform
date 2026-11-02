@@ -2,6 +2,8 @@ from src.desired.comparator import (
     compare_interfaces,
     compare_network_instance_interfaces,
     compare_ospf_configuration,
+    compare_bgp_configuration,
+    compare_routing_policy_configuration,
 )
 
 
@@ -248,3 +250,202 @@ def test_compare_ospf_configuration_detects_drift():
     assert drifted[0]["desired"] == "1.1.1.1"
     assert drifted[0]["actual"] == "9.9.9.9"
     assert drifted[0]["status"] == "DRIFT"
+
+
+def test_compare_bgp_configuration_pass():
+    desired = {
+        "autonomous_system": 65001,
+        "router_id": "1.1.1.1",
+        "afi_safi": {
+            "ipv4_unicast": {"admin_state": "enable"},
+        },
+        "peer_groups": {
+            "to-r2": {"peer_as": 65002},
+        },
+        "neighbors": {
+            "10.0.12.2": {"peer_group": "to-r2"},
+        },
+        "import_policy": "allow-bgp-loopbacks",
+        "export_policy": "allow-bgp-loopbacks",
+    }
+
+    actual = {
+        **desired,
+        "import_policy": ["allow-bgp-loopbacks"],
+        "export_policy": ["allow-bgp-loopbacks"],
+    }
+
+    results = compare_bgp_configuration(
+        device_name="R1",
+        desired_bgp=desired,
+        actual_bgp=actual,
+    )
+
+    assert len(results) == 7
+    assert all(result["status"] == "PASS" for result in results)
+
+
+def test_compare_bgp_configuration_detects_peer_as_drift():
+    desired = {
+        "autonomous_system": 65001,
+        "router_id": "1.1.1.1",
+        "afi_safi": {
+            "ipv4_unicast": {"admin_state": "enable"},
+        },
+        "peer_groups": {
+            "to-r2": {"peer_as": 65002},
+        },
+        "neighbors": {
+            "10.0.12.2": {"peer_group": "to-r2"},
+        },
+        "import_policy": "allow-bgp-loopbacks",
+        "export_policy": "allow-bgp-loopbacks",
+    }
+
+    actual = {
+        **desired,
+        "peer_groups": {
+            "to-r2": {"peer_as": 65099},
+        },
+        "import_policy": ["allow-bgp-loopbacks"],
+        "export_policy": ["allow-bgp-loopbacks"],
+    }
+
+    results = compare_bgp_configuration(
+        device_name="R1",
+        desired_bgp=desired,
+        actual_bgp=actual,
+    )
+
+    drifted = [
+        result for result in results
+        if result["status"] == "DRIFT"
+    ]
+
+    assert len(drifted) == 1
+    assert drifted[0]["field"] == "bgp.peer_groups"
+
+
+def test_compare_routing_policy_configuration_pass():
+    desired = {
+        "prefix_sets": {
+            "bgp-loopbacks": {
+                "prefixes": [
+                    {
+                        "prefix": "10.255.0.1/32",
+                        "mask_length_range": "exact",
+                    },
+                    {
+                        "prefix": "10.255.0.2/32",
+                        "mask_length_range": "exact",
+                    },
+                ],
+            },
+        },
+        "policies": {
+            "allow-bgp-loopbacks": {
+                "default_action": "reject",
+                "statements": [
+                    {
+                        "sequence": 10,
+                        "match": {
+                            "prefix_set": "bgp-loopbacks",
+                            "match_set_options": "any",
+                        },
+                        "action": "accept",
+                    },
+                ],
+            },
+        },
+    }
+
+    # Same content, deliberately in a different prefix order.
+    actual = {
+        "prefix_sets": {
+            "bgp-loopbacks": {
+                "prefixes": [
+                    {
+                        "prefix": "10.255.0.2/32",
+                        "mask_length_range": "exact",
+                    },
+                    {
+                        "prefix": "10.255.0.1/32",
+                        "mask_length_range": "exact",
+                    },
+                ],
+            },
+        },
+        "policies": desired["policies"],
+    }
+
+    results = compare_routing_policy_configuration(
+        device_name="R1",
+        desired_routing_policies=desired,
+        actual_routing_policies=actual,
+    )
+
+    assert len(results) == 2
+    assert all(result["status"] == "PASS" for result in results)
+
+
+def test_compare_routing_policy_configuration_detects_action_drift():
+    desired = {
+        "prefix_sets": {
+            "bgp-loopbacks": {
+                "prefixes": [
+                    {
+                        "prefix": "10.255.0.1/32",
+                        "mask_length_range": "exact",
+                    },
+                ],
+            },
+        },
+        "policies": {
+            "allow-bgp-loopbacks": {
+                "default_action": "reject",
+                "statements": [
+                    {
+                        "sequence": 10,
+                        "match": {
+                            "prefix_set": "bgp-loopbacks",
+                            "match_set_options": "any",
+                        },
+                        "action": "accept",
+                    },
+                ],
+            },
+        },
+    }
+
+    actual = {
+        "prefix_sets": desired["prefix_sets"],
+        "policies": {
+            "allow-bgp-loopbacks": {
+                "default_action": "reject",
+                "statements": [
+                    {
+                        "sequence": 10,
+                        "match": {
+                            "prefix_set": "bgp-loopbacks",
+                            "match_set_options": "any",
+                        },
+                        "action": "reject",
+                    },
+                ],
+            },
+        },
+    }
+
+    results = compare_routing_policy_configuration(
+        device_name="R1",
+        desired_routing_policies=desired,
+        actual_routing_policies=actual,
+    )
+
+    drifted = [
+        result for result in results
+        if result["status"] == "DRIFT"
+    ]
+
+    assert len(drifted) == 1
+    assert drifted[0]["field"] == "routing_policy.policies"

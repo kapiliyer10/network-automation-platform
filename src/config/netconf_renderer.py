@@ -12,6 +12,8 @@ def build_device_netconf_configs(
     desired_interfaces: dict[str, dict[str, Any]],
     desired_network_instances: dict[str, dict[str, Any]],
     desired_ospf: dict[str, Any] | None,
+    desired_bgp: dict[str, Any] | None = None,
+    desired_routing_policies: dict[str, Any] | None = None,
 ) -> list[str]:
     """Build NETCONF edit-config payloads from desired device state."""
 
@@ -70,5 +72,20 @@ def build_device_netconf_configs(
                         passive=interface.get("passive", False),
                     )
                 )
+    # Apply routing policies before BGP because BGP references
+    # these policy names through import-policy/export-policy.
+    if desired_bgp:
+        if desired_routing_policies:
+            configs.append(
+                client.build_routing_policy_edit_config(
+                    desired_routing_policies
+                )
+            )
 
+        configs.append(
+            client.build_bgp_edit_config(
+                network_instance_name="default",
+                desired_bgp=desired_bgp,
+            )
+        )
     return configs

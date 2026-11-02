@@ -8,6 +8,8 @@ from src.desired.validator import (
     validate_device_interfaces,
     validate_device_network_instances,
     validate_device_ospf,
+    validate_device_bgp_netconf,
+    validate_routing_policies_netconf,
 )
 from src.network.docker_resolver import resolve_container_ip
 from src.network.netconf_client import NETCONFClient
@@ -24,7 +26,11 @@ def configure_and_validate_device_netconf(
 
     device = inventory["devices"][device_name]
     desired_device = desired_state["devices"][device_name]
-
+    desired_bgp=desired_device.get("bgp"),
+    desired_routing_policies=desired_state.get(
+        "routing_policies",
+        {},
+    ),
     host = resolve_container_ip(device["container"])
 
     client = NETCONFClient(
@@ -42,6 +48,11 @@ def configure_and_validate_device_netconf(
             {},
         ),
         desired_ospf=desired_device.get("ospf"),
+                desired_bgp=desired_device.get("bgp"),
+        desired_routing_policies=desired_state.get(
+            "routing_policies",
+            {},
+        ),
     )
 
     interface_results = validate_device_interfaces_netconf(
@@ -130,10 +141,28 @@ def validate_device(
         password=password,
     )
 
+    bgp_results = validate_device_bgp_netconf(
+        device_name=device_name,
+        inventory=inventory,
+        desired_state=desired_state,
+        username=username,
+        password=password,
+    )
+
+    routing_policy_results = validate_routing_policies_netconf(
+        device_name=device_name,
+        inventory=inventory,
+        desired_state=desired_state,
+        username=username,
+        password=password,
+    )
+
     return (
         interface_results
         + network_instance_results
         + ospf_results
+        + bgp_results
+        + routing_policy_results
     )
 
 

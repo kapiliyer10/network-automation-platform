@@ -13,6 +13,8 @@ def render_device_config(
     desired_network_instances: dict[str, dict[str, Any]],
     desired_ospf: dict[str, Any],
     template_path: str | Path,
+    desired_bgp: dict[str, Any] | None = None,
+    desired_routing_policies: dict[str, Any] | None = None,
 ) -> str:
     """Render interface configuration from desired state."""
     template_path = Path(template_path)
@@ -33,6 +35,8 @@ def render_device_config(
             interfaces=desired_interfaces,
             network_instances=desired_network_instances,
             ospf=desired_ospf,
+            bgp=desired_bgp or {},
+            routing_policies=desired_routing_policies or {},
         ).strip()
 
     except Exception as exc:
@@ -56,6 +60,10 @@ def render_all_device_configs(
             template_path=template_path,
             desired_network_instances=network_instances,
             desired_ospf=device.get("ospf", {}),
+            desired_bgp=device.get("bgp", {}),
+            desired_routing_policies=desired_state.get(
+                "routing_policies", {}
+            ),
         )
 
     return device_configs

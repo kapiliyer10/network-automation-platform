@@ -25,4 +25,23 @@ set / network-instance default protocols ospf instance default router-id 3.3.3.3
 
 set / network-instance default protocols ospf instance default area 0.0.0.0 interface ethernet-1/1.0
 set / network-instance default protocols ospf instance default area 0.0.0.0 interface ethernet-1/2.0
-set / network-instance default protocols ospf instance default area 0.0.0.0 interface lo0.0 passive true
+
+# BGPv4 eBGP configuration
+set / network-instance default protocols bgp autonomous-system 65003
+set / network-instance default protocols bgp router-id 3.3.3.3
+set / network-instance default protocols bgp afi-safi ipv4-unicast admin-state enable
+set / network-instance default protocols bgp group to-r1 peer-as 65001
+set / network-instance default protocols bgp neighbor 10.0.31.1 peer-group to-r1
+set / network-instance default protocols bgp group to-r2 peer-as 65002
+set / network-instance default protocols bgp neighbor 10.0.23.1 peer-group to-r2
+
+# Explicit BGP import/export policy
+# BGP routing policy: permit only the three router loopbacks
+set / routing-policy prefix-set bgp-loopbacks prefix 10.255.0.1/32 mask-length-range exact
+set / routing-policy prefix-set bgp-loopbacks prefix 10.255.0.2/32 mask-length-range exact
+set / routing-policy prefix-set bgp-loopbacks prefix 10.255.0.3/32 mask-length-range exact
+set / routing-policy policy allow-bgp-loopbacks default-action policy-result reject
+set / routing-policy policy allow-bgp-loopbacks statement 10 match prefix prefix-set bgp-loopbacks match-set-options any
+set / routing-policy policy allow-bgp-loopbacks statement 10 action policy-result accept
+set / network-instance default protocols bgp import-policy [ allow-bgp-loopbacks ]
+set / network-instance default protocols bgp export-policy [ allow-bgp-loopbacks ]

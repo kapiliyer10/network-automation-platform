@@ -11,6 +11,8 @@ def apply_device_netconf_config(
     desired_interfaces: dict,
     desired_network_instances: dict,
     desired_ospf: dict | None,
+    desired_bgp: dict | None = None,
+    desired_routing_policies: dict | None = None,
 ) -> None:
     """Apply all generated NETCONF configuration and commit once."""
 
@@ -19,6 +21,8 @@ def apply_device_netconf_config(
         desired_interfaces=desired_interfaces,
         desired_network_instances=desired_network_instances,
         desired_ospf=desired_ospf,
+        desired_bgp=desired_bgp,
+        desired_routing_policies=desired_routing_policies,
     )
 
     for config in configs:

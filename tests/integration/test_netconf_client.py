@@ -155,10 +155,6 @@ def test_netconf_get_ospf_configuration():
                 "interfaces": [
                     {"name": "ethernet-1/1.0"},
                     {"name": "ethernet-1/2.0"},
-                    {
-                        "name": "lo0.0",
-                        "passive": True,
-                    },
                 ]
             }
         },
@@ -188,10 +184,6 @@ def test_netconf_ospf_instance_round_trip():
                 "interfaces": [
                     {"name": "ethernet-1/1.0"},
                     {"name": "ethernet-1/2.0"},
-                    {
-                        "name": "lo0.0",
-                        "passive": True,
-                    },
                 ]
             }
         },
@@ -249,10 +241,6 @@ def test_netconf_ospf_area_interfaces_round_trip():
                 "interfaces": [
                     {"name": "ethernet-1/1.0"},
                     {"name": "ethernet-1/2.0"},
-                    {
-                        "name": "lo0.0",
-                        "passive": True,
-                    },
                 ]
             }
         },
@@ -282,18 +270,39 @@ def test_netconf_ospf_area_interfaces_round_trip():
         network_instance_name="default",
         ospf_instance_name="default",
         area_id="0.0.0.0",
-        interface_name="lo0.0",
+        interface_name="ethernet-1/1.0",
         passive=True,
     )
 
-    # Apply both changes to candidate
-    client.edit_config(normal_config)
-    client.edit_config(passive_config)
+    # Temporarily make the transit interface passive and verify the change.
+    passive_expected = {
+        **expected,
+        "areas": {
+            "0.0.0.0": {
+                "interfaces": [
+                    {"name": "ethernet-1/1.0", "passive": True},
+                    {"name": "ethernet-1/2.0"},
+                ]
+            }
+        },
+    }
 
-    # Commit once
-    client.commit()
+    try:
+        client.edit_config(passive_config)
+        client.commit()
 
-    # Verify final running configuration
+        passive_actual = client.get_ospf_configuration(
+            network_instance_name="default",
+            ospf_instance_name="default",
+        )
+        assert passive_actual == passive_expected
+
+    finally:
+        # Restore the transit interface so later tests see the baseline topology.
+        client.edit_config(normal_config)
+        client.commit()
+
+    # Verify the original running configuration has been restored.
     actual = client.get_ospf_configuration(
         network_instance_name="default",
         ospf_instance_name="default",

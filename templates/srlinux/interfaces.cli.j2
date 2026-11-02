@@ -27,3 +27,39 @@ set / network-instance default protocols ospf instance {{ instance.name }} area 
 {%- endfor %}
 {%- endfor %}
 {%- endif %}
+{%- if bgp %}
+{{ '\n' }}set / network-instance default protocols bgp autonomous-system {{ bgp.autonomous_system }}
+{{ '\n' }}set / network-instance default protocols bgp router-id {{ bgp.router_id }}
+{{ '\n' }}set / network-instance default protocols bgp afi-safi ipv4-unicast admin-state {{ bgp.afi_safi.ipv4_unicast.admin_state }}
+
+{%- for group_name, group in bgp.peer_groups.items() %}
+{{ '\n' }}set / network-instance default protocols bgp group {{ group_name }} peer-as {{ group.peer_as }}
+{%- endfor %}
+
+{%- for neighbor_address, neighbor in bgp.neighbors.items() %}
+{{ '\n' }}set / network-instance default protocols bgp neighbor {{ neighbor_address }} peer-group {{ neighbor.peer_group }}
+{%- endfor %}
+
+{%- if routing_policies %}
+{%- for prefix_set_name, prefix_set in routing_policies.prefix_sets.items() %}
+{%- for entry in prefix_set.prefixes %}
+{{ '\n' }}set / routing-policy prefix-set {{ prefix_set_name }} prefix {{ entry.prefix }} mask-length-range {{ entry.mask_length_range }}
+{%- endfor %}
+{%- endfor %}
+
+{%- for policy_name, policy in routing_policies.policies.items() %}
+{{ '\n' }}set / routing-policy policy {{ policy_name }} default-action policy-result {{ policy.default_action }}
+{%- for statement in policy.statements %}
+{{ '\n' }}set / routing-policy policy {{ policy_name }} statement {{ statement.sequence }} match prefix prefix-set {{ statement["match"]["prefix_set"] }} match-set-options {{ statement["match"]["match_set_options"] }}
+{{ '\n' }}set / routing-policy policy {{ policy_name }} statement {{ statement.sequence }} action policy-result {{ statement.action }}
+{%- endfor %}
+{%- endfor %}
+{%- endif %}
+
+{%- if bgp.import_policy %}
+{{ '\n' }}set / network-instance default protocols bgp import-policy [ {{ bgp.import_policy }} ]
+{%- endif %}
+{%- if bgp.export_policy %}
+{{ '\n' }}set / network-instance default protocols bgp export-policy [ {{ bgp.export_policy }} ]
+{%- endif %}
+{%- endif %}

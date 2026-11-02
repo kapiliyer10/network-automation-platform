@@ -9,6 +9,8 @@ from src.desired.validator import (
     validate_device_interfaces_netconf,
     validate_device_network_instances_netconf,
     validate_device_ospf_netconf,
+    validate_device_bgp_netconf,
+    validate_routing_policies_netconf,
 )
 from src.inventory.loader import load_inventory
 from src.network.docker_resolver import resolve_container_ip
@@ -65,10 +67,28 @@ def test_apply_device_netconf_config_round_trip():
         password=password,
     )
 
+    before_bgp = validate_device_bgp_netconf(
+        device_name=device_name,
+        inventory=inventory,
+        desired_state=desired_state,
+        username=username,
+        password=password,
+    )
+
+    before_routing_policies = validate_routing_policies_netconf(
+        device_name=device_name,
+        inventory=inventory,
+        desired_state=desired_state,
+        username=username,
+        password=password,
+    )
+
     before_results = (
         before_interfaces
         + before_network_instances
         + before_ospf
+        + before_bgp
+        + before_routing_policies
     )
 
     assert before_results
@@ -101,6 +121,11 @@ def test_apply_device_netconf_config_round_trip():
             {},
         ),
         desired_ospf=device.get("ospf"),
+        desired_bgp=device.get("bgp"),
+        desired_routing_policies=desired_state.get(
+            "routing_policies",
+            {},
+        ),
     )
 
     # Retrieve actual state and compare again.
@@ -128,10 +153,28 @@ def test_apply_device_netconf_config_round_trip():
         password=password,
     )
 
+    after_bgp = validate_device_bgp_netconf(
+        device_name=device_name,
+        inventory=inventory,
+        desired_state=desired_state,
+        username=username,
+        password=password,
+    )
+
+    after_routing_policies = validate_routing_policies_netconf(
+        device_name=device_name,
+        inventory=inventory,
+        desired_state=desired_state,
+        username=username,
+        password=password,
+    )
+
     after_results = (
         after_interfaces
         + after_network_instances
         + after_ospf
+        + after_bgp
+        + after_routing_policies
     )
 
     assert after_results
@@ -182,6 +225,27 @@ def test_apply_all_devices_netconf_round_trip():
                 password=password,
             )
         )
+
+        before_results.extend(
+            validate_device_bgp_netconf(
+                device_name=device_name,
+                inventory=inventory,
+                desired_state=desired_state,
+                username=username,
+                password=password,
+            )
+        )
+
+        before_results.extend(
+            validate_routing_policies_netconf(
+                device_name=device_name,
+                inventory=inventory,
+                desired_state=desired_state,
+                username=username,
+                password=password,
+            )
+        )
+
 
     assert before_results
     assert all(

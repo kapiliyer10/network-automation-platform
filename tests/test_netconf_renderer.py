@@ -91,3 +91,75 @@ def test_build_device_netconf_configs():
         "srl_nokia-ospf-types:ospf-v2" in config
         for config in configs
     )
+
+
+def test_build_device_netconf_configs_includes_bgp():
+    client = NETCONFClient(
+        host="test-host",
+        port=830,
+        username="test-user",
+        password="test-password",
+    )
+
+    desired_bgp = {
+        "autonomous_system": 65001,
+        "router_id": "1.1.1.1",
+        "afi_safi": {
+            "ipv4_unicast": {
+                "admin_state": "enable",
+            },
+        },
+        "peer_groups": {
+            "to-r2": {"peer_as": 65002},
+        },
+        "neighbors": {
+            "10.0.12.2": {"peer_group": "to-r2"},
+        },
+        "import_policy": "allow-bgp-loopbacks",
+        "export_policy": "allow-bgp-loopbacks",
+    }
+
+    desired_routing_policies = {
+        "prefix_sets": {
+            "bgp-loopbacks": {
+                "prefixes": [
+                    {
+                        "prefix": "10.255.0.1/32",
+                        "mask_length_range": "exact",
+                    },
+                ],
+            },
+        },
+        "policies": {
+            "allow-bgp-loopbacks": {
+                "default_action": "reject",
+                "statements": [
+                    {
+                        "sequence": 10,
+                        "match": {
+                            "prefix_set": "bgp-loopbacks",
+                            "match_set_options": "any",
+                        },
+                        "action": "accept",
+                    },
+                ],
+            },
+        },
+    }
+
+    configs = build_device_netconf_configs(
+        client=client,
+        desired_interfaces={},
+        desired_network_instances={},
+        desired_ospf=None,
+        desired_bgp=desired_bgp,
+        desired_routing_policies=desired_routing_policies,
+    )
+
+    assert len(configs) == 2
+
+    # Routing policy must be generated before BGP.
+    assert "routing-policy" in configs[0]
+    assert "bgp" in configs[1]
+    assert "65001" in configs[1]
+    assert "10.0.12.2" in configs[1]

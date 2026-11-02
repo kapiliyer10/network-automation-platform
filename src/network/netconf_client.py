@@ -12,6 +12,9 @@ NETWORK_INSTANCE_NS = (
     "urn:nokia.com:srlinux:net-inst:network-instance"
 )
 OSPF_NS = "urn:nokia.com:srlinux:ospf:ospf"
+BGP_NS = "urn:nokia.com:srlinux:bgp:bgp"
+ROUTING_POLICY_NS = "urn:nokia.com:srlinux:plcy:routing-policy"
+COMMON_NS = "urn:nokia.com:srlinux:general:common"
 
 def parse_interface_ipv4(response_xml: str) -> dict[str, str | None]:
         """Parse IPv4 data from a NETCONF interface response."""
@@ -334,6 +337,250 @@ def parse_ospf_configuration(
         f"in network-instance '{network_instance_name}'"
     )
 
+def parse_bgp_configuration(
+    response_xml: str,
+    network_instance_name: str,
+) -> dict[str, Any]:
+    """Parse BGP configuration from a NETCONF response."""
+
+    root = ET.fromstring(response_xml)
+
+    network_instances = root.findall(
+        f".//{{{NETWORK_INSTANCE_NS}}}network-instance"
+    )
+
+    for network_instance in network_instances:
+        name = network_instance.find(
+            f"{{{NETWORK_INSTANCE_NS}}}name"
+        )
+
+        if (
+            name is None
+            or name.text != network_instance_name
+        ):
+            continue
+
+        bgp = network_instance.find(
+            f"{{{NETWORK_INSTANCE_NS}}}protocols/"
+            f"{{{BGP_NS}}}bgp"
+        )
+
+        if bgp is None:
+            break
+
+        def get_text(parent, field):
+            element = parent.find(f"{{{BGP_NS}}}{field}")
+
+            if element is None or element.text is None:
+                return None
+
+            return element.text.strip()
+
+        afi_safi = {}
+
+        for entry in bgp.findall(f"{{{BGP_NS}}}afi-safi"):
+            afi_name = get_text(entry, "afi-safi-name")
+            admin_state = get_text(entry, "admin-state")
+
+            if afi_name:
+                # Normalize srl_nokia-common:ipv4-unicast
+                # to ipv4_unicast, matching the YAML key.
+                afi_name = afi_name.split(":")[-1]
+                afi_safi[afi_name.replace("-", "_")] = {
+                    "admin_state": admin_state,
+                }
+
+        peer_groups = {}
+
+        for group in bgp.findall(f"{{{BGP_NS}}}group"):
+            group_name = get_text(group, "group-name")
+            peer_as = get_text(group, "peer-as")
+
+            if group_name:
+                peer_groups[group_name] = {
+                    "peer_as": int(peer_as) if peer_as else None,
+                }
+
+        neighbors = {}
+
+        for neighbor in bgp.findall(f"{{{BGP_NS}}}neighbor"):
+            peer_address = get_text(neighbor, "peer-address")
+            peer_group = get_text(neighbor, "peer-group")
+
+            if peer_address:
+                neighbors[peer_address] = {
+                    "peer_group": peer_group,
+                }
+
+        return {
+            "autonomous_system": int(
+                get_text(bgp, "autonomous-system")
+            ),
+            "router_id": get_text(bgp, "router-id"),
+            "afi_safi": afi_safi,
+            "peer_groups": peer_groups,
+            "neighbors": neighbors,
+            "import_policy": [
+                element.text.strip()
+                for element in bgp.findall(
+                    f"{{{BGP_NS}}}import-policy"
+                )
+                if element.text
+            ],
+            "export_policy": [
+                element.text.strip()
+                for element in bgp.findall(
+                    f"{{{BGP_NS}}}export-policy"
+                )
+                if element.text
+            ],
+        }
+
+    raise NETCONFError(
+        f"BGP configuration not found in network-instance "
+        f"'{network_instance_name}'"
+    )
+
+
+def parse_routing_policy_configuration(
+    response_xml: str,
+) -> dict[str, Any]:
+    """Parse routing policies from a NETCONF response."""
+
+    root = ET.fromstring(response_xml)
+
+    routing_policy = root.find(
+        f".//{{{ROUTING_POLICY_NS}}}routing-policy"
+    )
+
+    if routing_policy is None:
+        raise NETCONFError("Routing-policy configuration not found")
+
+    prefix_sets = {}
+
+    for prefix_set in routing_policy.findall(
+        f"{{{ROUTING_POLICY_NS}}}prefix-set"
+    ):
+        name = prefix_set.find(
+            f"{{{ROUTING_POLICY_NS}}}name"
+        )
+
+        if name is None or name.text is None:
+            continue
+
+        prefixes = []
+
+        for prefix in prefix_set.findall(
+            f"{{{ROUTING_POLICY_NS}}}prefix"
+        ):
+            ip_prefix = prefix.find(
+                f"{{{ROUTING_POLICY_NS}}}ip-prefix"
+            )
+            mask_range = prefix.find(
+                f"{{{ROUTING_POLICY_NS}}}mask-length-range"
+            )
+
+            if (
+                ip_prefix is not None
+                and ip_prefix.text
+                and mask_range is not None
+                and mask_range.text
+            ):
+                prefixes.append({
+                    "prefix": ip_prefix.text.strip(),
+                    "mask_length_range": mask_range.text.strip(),
+                })
+
+        prefix_sets[name.text.strip()] = {
+            "prefixes": prefixes,
+        }
+
+    policies = {}
+
+    for policy in routing_policy.findall(
+        f"{{{ROUTING_POLICY_NS}}}policy"
+    ):
+        policy_name = policy.find(
+            f"{{{ROUTING_POLICY_NS}}}name"
+        )
+
+        if policy_name is None or policy_name.text is None:
+            continue
+
+        default_action = policy.find(
+            f"{{{ROUTING_POLICY_NS}}}default-action/"
+            f"{{{ROUTING_POLICY_NS}}}policy-result"
+        )
+
+        statements = []
+
+        for statement in policy.findall(
+            f"{{{ROUTING_POLICY_NS}}}statement"
+        ):
+            sequence = statement.find(
+                f"{{{ROUTING_POLICY_NS}}}name"
+            )
+            prefix_set_name = statement.find(
+                f"{{{ROUTING_POLICY_NS}}}match/"
+                f"{{{ROUTING_POLICY_NS}}}prefix/"
+                f"{{{ROUTING_POLICY_NS}}}prefix-set"
+            )
+            match_options = statement.find(
+                f"{{{ROUTING_POLICY_NS}}}match/"
+                f"{{{ROUTING_POLICY_NS}}}prefix/"
+                f"{{{ROUTING_POLICY_NS}}}match-set-options"
+            )
+            action = statement.find(
+                f"{{{ROUTING_POLICY_NS}}}action/"
+                f"{{{ROUTING_POLICY_NS}}}policy-result"
+            )
+
+            if sequence is None or sequence.text is None:
+                continue
+
+            sequence_value = sequence.text.strip()
+
+            statements.append({
+                "sequence": (
+                    int(sequence_value)
+                    if sequence_value.isdigit()
+                    else sequence_value
+                ),
+                "match": {
+                    "prefix_set": (
+                        prefix_set_name.text.strip()
+                        if prefix_set_name is not None
+                        and prefix_set_name.text
+                        else None
+                    ),
+                    "match_set_options": (
+                        match_options.text.strip()
+                        if match_options is not None
+                        and match_options.text
+                        else "any"
+                    ),
+                },
+                "action": (
+                    action.text.strip()
+                    if action is not None and action.text
+                    else None
+                ),
+            })
+
+        policies[policy_name.text.strip()] = {
+            "default_action": (
+                default_action.text.strip()
+                if default_action is not None
+                and default_action.text
+                else None
+            ),
+            "statements": statements,
+        }
+
+    return {
+        "prefix_sets": prefix_sets,
+        "policies": policies,
+    }
 
 class NETCONFClient:
     """Small wrapper around ncclient for SR Linux."""
@@ -708,7 +955,7 @@ class NETCONFClient:
         passive_config = (
             "<passive>true</passive>"
             if passive
-            else ""
+            else '<passive nc:operation="remove"/>'
         )
 
         return f"""<config
@@ -737,6 +984,285 @@ class NETCONFClient:
             </network-instance>
         </config>"""
 
+
+    def build_bgp_edit_config(
+        self,
+        network_instance_name: str,
+        desired_bgp: dict[str, Any],
+    ) -> str:
+        """Build a NETCONF edit-config payload for BGP."""
+
+        network_instance_name = escape(network_instance_name)
+
+        autonomous_system = escape(
+            str(desired_bgp["autonomous_system"])
+        )
+        router_id = escape(desired_bgp["router_id"])
+
+        bgp_config = [
+            f"<autonomous-system>{autonomous_system}</autonomous-system>",
+            f"<router-id>{router_id}</router-id>",
+        ]
+
+        # BGP import/export policy leaf-lists.
+        for field in ("export_policy", "import_policy"):
+            policies = desired_bgp.get(field, [])
+
+            if isinstance(policies, str):
+                policies = [policies]
+
+            for policy_name in policies:
+                policy_name = escape(policy_name)
+                bgp_config.append(
+                    f"<{field.replace('_', '-')}>"
+                    f"{policy_name}"
+                    f"</{field.replace('_', '-')}>"
+                )
+
+        # Address families, such as IPv4 unicast.
+        for afi_safi_name, afi_safi in (
+            desired_bgp.get("afi_safi", {}).items()
+        ):
+            afi_safi_name = escape(
+                afi_safi_name.replace("_", "-")
+            )
+            admin_state = escape(afi_safi["admin_state"])
+
+            bgp_config.append(
+                f"""
+                <afi-safi nc:operation="merge">
+                    <afi-safi-name
+                        xmlns:srl_nokia-common="{COMMON_NS}">
+                        srl_nokia-common:{afi_safi_name}
+                    </afi-safi-name>
+                    <admin-state>{admin_state}</admin-state>
+                </afi-safi>
+                """
+            )
+
+        # BGP peer groups.
+        for group_name, group in (
+            desired_bgp.get("peer_groups", {}).items()
+        ):
+            group_name = escape(group_name)
+            peer_as = escape(str(group["peer_as"]))
+
+            bgp_config.append(
+                f"""
+                <group nc:operation="merge">
+                    <group-name>{group_name}</group-name>
+                    <peer-as>{peer_as}</peer-as>
+                </group>
+                """
+            )
+
+        # BGP neighbors.
+        for neighbor_address, neighbor in (
+            desired_bgp.get("neighbors", {}).items()
+        ):
+            neighbor_address = escape(neighbor_address)
+            peer_group = escape(neighbor["peer_group"])
+
+            bgp_config.append(
+                f"""
+                <neighbor nc:operation="merge">
+                    <peer-address>{neighbor_address}</peer-address>
+                    <peer-group>{peer_group}</peer-group>
+                </neighbor>
+                """
+            )
+
+        return f"""
+        <config
+            xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"
+            xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0">
+            <network-instance
+                xmlns="{NETWORK_INSTANCE_NS}"
+                nc:operation="merge">
+                <name>{network_instance_name}</name>
+                <protocols>
+                    <bgp
+                        xmlns="{BGP_NS}"
+                        nc:operation="merge">
+                        {''.join(bgp_config)}
+                    </bgp>
+                </protocols>
+            </network-instance>
+        </config>
+        """
+
+    def build_routing_policy_edit_config(
+        self,
+        desired_routing_policies: dict[str, Any],
+    ) -> str:
+        """Build a NETCONF edit-config payload for routing policies."""
+
+        policy_config = []
+
+        # Prefix sets and their prefixes.
+        for prefix_set_name, prefix_set in (
+            desired_routing_policies.get("prefix_sets", {}).items()
+        ):
+            prefix_set_name = escape(prefix_set_name)
+            prefixes = []
+
+            for prefix_entry in prefix_set.get("prefixes", []):
+                prefix = escape(prefix_entry["prefix"])
+                mask_length_range = escape(
+                    prefix_entry["mask_length_range"]
+                )
+
+                prefixes.append(
+                    f"""
+                    <prefix nc:operation="merge">
+                        <ip-prefix>{prefix}</ip-prefix>
+                        <mask-length-range>
+                            {mask_length_range}
+                        </mask-length-range>
+                    </prefix>
+                    """
+                )
+
+            policy_config.append(
+                f"""
+                <prefix-set nc:operation="merge">
+                    <name>{prefix_set_name}</name>
+                    {''.join(prefixes)}
+                </prefix-set>
+                """
+            )
+
+        # Routing policies and their statements.
+        for policy_name, policy in (
+            desired_routing_policies.get("policies", {}).items()
+        ):
+            policy_name = escape(policy_name)
+            default_action = escape(policy["default_action"])
+            statements = []
+
+            for statement in policy.get("statements", []):
+                sequence = escape(str(statement["sequence"]))
+
+                match = statement["match"]
+                prefix_set_name = escape(match["prefix_set"])
+                match_set_options = escape(
+                    match.get("match_set_options", "any")
+                )
+                action = escape(statement["action"])
+
+                statements.append(
+                    f"""
+                    <statement nc:operation="merge">
+                        <name>{sequence}</name>
+                        <match>
+                            <prefix>
+                                <prefix-set>{prefix_set_name}</prefix-set>
+                                <match-set-options>
+                                    {match_set_options}
+                                </match-set-options>
+                            </prefix>
+                        </match>
+                        <action>
+                            <policy-result>{action}</policy-result>
+                        </action>
+                    </statement>
+                    """
+                )
+
+            policy_config.append(
+                f"""
+                <policy nc:operation="merge">
+                    <name>{policy_name}</name>
+                    <default-action>
+                        <policy-result>{default_action}</policy-result>
+                    </default-action>
+                    {''.join(statements)}
+                </policy>
+                """
+            )
+
+        return f"""
+        <config
+            xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"
+            xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0">
+            <routing-policy
+                xmlns="{ROUTING_POLICY_NS}"
+                nc:operation="merge">
+                {''.join(policy_config)}
+            </routing-policy>
+        </config>
+        """
+
+    def get_bgp_configuration(
+        self,
+        network_instance_name: str,
+    ) -> dict[str, Any]:
+        """Retrieve BGP configuration from the running datastore."""
+
+        bgp_filter = f"""
+        <network-instance
+            xmlns="{NETWORK_INSTANCE_NS}">
+            <name>{escape(network_instance_name)}</name>
+            <protocols>
+                <bgp xmlns="{BGP_NS}">
+                    <autonomous-system/>
+                    <router-id/>
+                    <import-policy/>
+                    <export-policy/>
+                    <afi-safi/>
+                    <group/>
+                    <neighbor/>
+                </bgp>
+            </protocols>
+        </network-instance>
+        """
+
+        with manager.connect(
+            host=self.host,
+            port=self.port,
+            username=self.username,
+            password=self.password,
+            hostkey_verify=False,
+            allow_agent=False,
+            look_for_keys=False,
+        ) as session:
+            response = session.get_config(
+                source="running",
+                filter=("subtree", bgp_filter),
+            )
+
+            return parse_bgp_configuration(
+                response.data_xml,
+                network_instance_name,
+            )
+
+    def get_routing_policy_configuration(self) -> dict[str, Any]:
+        """Retrieve routing-policy configuration from running datastore."""
+
+        policy_filter = f"""
+        <routing-policy xmlns="{ROUTING_POLICY_NS}">
+            <prefix-set/>
+            <policy/>
+        </routing-policy>
+        """
+
+        with manager.connect(
+            host=self.host,
+            port=self.port,
+            username=self.username,
+            password=self.password,
+            hostkey_verify=False,
+            allow_agent=False,
+            look_for_keys=False,
+        ) as session:
+            response = session.get_config(
+                source="running",
+                filter=("subtree", policy_filter),
+            )
+
+            return parse_routing_policy_configuration(
+                response.data_xml
+            )
 
     def edit_config(self, config_xml: str) -> Any:
             """Apply configuration to the candidate datastore."""
