@@ -179,7 +179,7 @@ The expanded topology with Linux endpoints belongs to the Project 2 validation e
 
 ## 7. Routing Configuration Scope
 
-The primary lab uses OSPF for routing and CI readiness. The Project 1 implementation also includes BGP desired-state and NETCONF configuration support. This documents the implemented configuration capability; it does not imply that BGP operational session state is part of the normalized gNMI discovery model.
+The primary lab uses OSPF for routing and CI readiness and runs an eBGP full mesh between all three routers. All six BGP peer sessions and BGP route exchange have been verified through the live SR Linux CLI. The Python application supports BGP desired-state configuration, NETCONF application, read-back, and configuration validation. It does not yet automate operational BGP peer-state or route-table assertions. See [Routing Protocols: OSPF and BGP](routing-protocols.md) for the protocol configuration, verification evidence, and current automation boundaries.
 
 ## 8. Streaming Telemetry and Monitoring
 

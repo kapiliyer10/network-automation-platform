@@ -57,7 +57,7 @@ A successful configuration operation is not treated as proof of success by itsel
 - **Drift detection:** compares desired and actual state and reports discrepancies.
 - **Configuration generation:** renders SR Linux CLI configuration with Jinja2 and supports model-driven NETCONF/YANG configuration.
 - **NETCONF verification:** applies configuration and supports configuration read-back and post-change verification.
-- **Routing configuration:** supports the OSPF-based lab and the implemented BGP desired-state / NETCONF configuration extension.
+- **Routing protocols:** the primary lab runs OSPF and a three-router eBGP full mesh. All six BGP sessions and route exchange were verified through the SR Linux CLI. The Python application manages BGP configuration but does not yet automate peer-state or route-table validation.
 - **Orchestration and API:** integrates Ansible and exposes workflow operations through FastAPI.
 - **Packaging and automation:** packages the application with Docker and runs tests through GitHub Actions.
 
@@ -102,7 +102,7 @@ See [Network Topology](docs/network-topology.md) for both lab profiles and their
 | Network environment | Nokia SR Linux, Containerlab, Docker, IPv4, OSPF |
 | Model-driven management | gNMI, YANG, NETCONF |
 | Streaming telemetry and monitoring | gNMIc, OpenConfig, Prometheus, Grafana |
-| Routing configuration | OSPF lab configuration; BGP desired-state / NETCONF configuration support |
+| Routing protocols | OSPF lab routing; BGP desired-state / NETCONF configuration and read-back validation |
 | Configuration and orchestration | Jinja2, Ansible |
 | Application interface | FastAPI, REST API, Uvicorn |
 | Testing and CI/CD | pytest, GitHub Actions, live NETCONF integration tests |
@@ -237,7 +237,7 @@ See [Testing and CI/CD](docs/testing-and-ci-cd.md) for the pipeline details and 
 
 ## 10. Project Status and Documentation
 
-**Core implementation: complete.** The platform includes state discovery, desired-state comparison, drift detection, configuration generation, NETCONF configuration and verification, Ansible orchestration, a FastAPI interface, Docker packaging, automated tests, and GitHub Actions CI/CD. BGP desired-state / NETCONF configuration support is an implemented extension.
+**Core implementation: complete.** The platform includes state discovery, desired-state comparison, drift detection, configuration generation, NETCONF configuration and verification, Ansible orchestration, a FastAPI interface, Docker packaging, automated tests, and GitHub Actions CI/CD. The primary lab's three-router eBGP full mesh has been verified live: all six peer sessions reached Established and BGP routes were exchanged. The Python application supports BGP configuration management and read-back validation, but does not yet automate operational peer-state or route-table checks.
 
 The RESTCONF demonstration remains deferred and is not part of the completed core workflow. No license file is currently specified for the repository.
 
@@ -247,6 +247,7 @@ Detailed documentation:
 
 - [System Architecture](docs/architecture.md)
 - [Network Topology](docs/network-topology.md)
+- [Routing Protocols: OSPF and BGP](docs/routing-protocols.md)
 - [Desired State and Drift Detection](docs/desired-state-and-drift.md)
 - [gNMI, NETCONF, and YANG](docs/gnmi-netconf-and-yang.md)
 - [Streaming Telemetry and Monitoring](docs/streaming-telemetry.md)

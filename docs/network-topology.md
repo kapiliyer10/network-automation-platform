@@ -21,6 +21,8 @@ The lab provides:
 - Streaming OpenConfig telemetry for interface counters and operational status
 - NETCONF access for model-driven configuration
 
+The primary lab uses OSPF for internal routing and a three-router eBGP full mesh. See [Routing Protocols: OSPF and BGP](routing-protocols.md) for configuration details and the verified operational state.
+
 ### Primary Lab Management Addressing
 
 The three routers use fixed management IPv4 addresses in the Containerlab `clab` network. These addresses also match their generated gNMI TLS certificate identities.
