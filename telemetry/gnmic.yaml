@@ -1,0 +1,35 @@
+encoding: JSON_IETF
+log: true
+
+tls-ca: /etc/gnmic/ca.pem
+
+targets:
+  "172.20.20.4:57400": {}
+  "172.20.20.2:57400": {}
+  "172.20.20.3:57400": {}
+
+subscriptions:
+  interface_in_octets:
+    paths:
+      - "openconfig:/interfaces/interface[name=ethernet-1/1]/state/counters/in-octets"
+    mode: STREAM
+    stream-mode: SAMPLE
+    sample-interval: 5s
+    encoding: JSON_IETF
+
+  interface_oper_status:
+    paths:
+      - "openconfig:/interfaces/interface[name=ethernet-1/1]/state/oper-status"
+    mode: STREAM
+    stream-mode: SAMPLE
+    sample-interval: 5s
+    encoding: JSON_IETF
+
+outputs:
+  prometheus:
+    type: prometheus
+    listen: "0.0.0.0:9804"
+    path: /metrics
+    metric-prefix: srl
+    expiration: 60s
+    strings-as-labels: true
