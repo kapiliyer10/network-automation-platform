@@ -1,8 +1,8 @@
 # Network Topology
 
-## 1. Primary Project 1 Lab
+## 1. Primary `network-automation-platform` Lab
 
-The primary Project 1 environment is a three-router Nokia SR Linux topology running in Containerlab.
+The primary `network-automation-platform` environment is a three-router Nokia SR Linux topology running in Containerlab.
 
 ```text
                  R1
@@ -58,7 +58,7 @@ A destructive `--reconfigure` operation is not part of the normal startup proced
 
 ### Streaming Telemetry and Monitoring
 
-The primary three-router lab also runs a separate streaming telemetry pipeline. It monitors `ethernet-1/1` on R1, R2, and R3 without requiring the expanded Project 2 topology or its Linux endpoints.
+The primary three-router lab also runs a separate streaming telemetry pipeline. It monitors `ethernet-1/1` on R1, R2, and R3 without requiring the expanded `network-test-validation-platform` topology or its Linux endpoints.
 
 The monitoring data flow is:
 
@@ -94,9 +94,9 @@ Relevant configuration files:
 
 The monitoring pipeline is independent of the Python automation workflow. Its detailed configuration, verified OpenConfig paths, dashboard panels, and validation results are documented in [Streaming Telemetry and Monitoring](streaming-telemetry.md).
 
-## 2. Expanded Topology Used by Project 2
+## 2. Expanded Topology Used by `network-test-validation-platform`
 
-Project 2 uses a separate `srl-expanded` Containerlab profile. It retains the three Nokia SR Linux routers and adds two Linux endpoints, H1 and H2, for end-to-end traffic testing.
+`network-test-validation-platform` uses a separate `srl-expanded` Containerlab profile. It retains the three Nokia SR Linux routers and adds two Linux endpoints, H1 and H2, for end-to-end traffic testing.
 
 ```text
        H1                              H2
@@ -114,7 +114,7 @@ The topology definition is `topology/srl-expanded.clab.yml`. Router startup conf
 - Both endpoints use the `network-test-endpoint:1.0` Docker image, built from `topology/tcp-endpoint/Dockerfile`.
 - Router container names use the `clab-srl-expanded-` prefix.
 
-Build the endpoint image from the Project 1 repository root:
+Build the endpoint image from the `network-automation-platform` repository root:
 
 ```bash
 docker build -t network-test-endpoint:1.0 topology/tcp-endpoint
@@ -127,8 +127,8 @@ Deploy and stop the expanded topology:
 ./scripts/lab_expanded_down.sh
 ```
 
-Project 2 uses this profile for connectivity, interface and protocol checks, OSPF and route validation, LLDP neighbor validation, failure and recovery tests, TCP/UDP application exchanges, performance and latency measurements, controlled traffic impairments, and packet capture.
+`network-test-validation-platform` uses this profile for connectivity, interface and protocol checks, OSPF and route validation, LLDP neighbor validation, failure and recovery tests, TCP/UDP application exchanges, performance and latency measurements, controlled traffic impairments, and packet capture.
 
 ## 3. Project Boundary
 
-Project 1 owns network automation and device-management workflows. Project 2 owns network-behavior validation. The projects use separate repositories and workflows; Project 2 consumes the expanded lab profile.
+`network-automation-platform` owns network automation and device-management workflows. `network-test-validation-platform` owns network-behavior validation. The projects use separate repositories and workflows; `network-test-validation-platform` consumes the expanded lab profile.

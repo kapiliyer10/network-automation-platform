@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-Project 1 includes a streaming telemetry and observability extension
+`network-automation-platform` includes a streaming telemetry and observability extension
 for the primary three-router Nokia SR Linux Containerlab topology.
 
 The monitoring pipeline uses:

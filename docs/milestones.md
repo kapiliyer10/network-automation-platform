@@ -1,6 +1,6 @@
 # Project Milestones
 
-This page summarizes the implementation milestones documented for Project 1.
+This page summarizes the implementation milestones documented for `network-automation-platform`.
 
 | Milestone | Scope | Status |
 |---|---|---|
@@ -21,7 +21,7 @@ This page summarizes the implementation milestones documented for Project 1.
 
 ## Additional Implemented Capability
 
-BGP desired-state and NETCONF configuration support was added as an extension to the core Project 1 workflow. It supports the implemented BGP configuration and read-back / drift-validation path. This is a completed Project 1 capability; no further BGP development is implied by this documentation.
+BGP desired-state and NETCONF configuration support was added as an extension to the core `network-automation-platform` workflow. It supports the implemented BGP configuration and read-back / drift-validation path. This is a completed `network-automation-platform` capability; no further BGP development is implied by this documentation.
 
 ## Overall Status
 

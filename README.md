@@ -69,7 +69,7 @@ See **[System Architecture](docs/architecture.md)** for the component diagram, d
 
 ## 4. Network Lab
 
-The primary Project 1 lab is a three-router Nokia SR Linux topology running in Containerlab:
+The primary `network-automation-platform` lab is a three-router Nokia SR Linux topology running in Containerlab:
 
 ```text
                  R1
@@ -81,6 +81,8 @@ The primary Project 1 lab is a three-router Nokia SR Linux topology running in C
 
 It provides management connectivity, IPv4 connectivity, OSPF routing, gNMI access, and NETCONF access. The topology definition is `topology/srl-lab.clab.yml`; router startup configurations are under `configs/srl/`.
 
+eBGP full mesh (AS 65001–65003) running; see `docs/routing-protocols.md`.
+
 Start and stop the primary lab from the repository root:
 
 ```bash
@@ -88,9 +90,9 @@ Start and stop the primary lab from the repository root:
 ./scripts/lab_down.sh
 ```
 
-### Relationship to Project 2
+### Relationship to `network-test-validation-platform`
 
-Project 2, the Network Test & Validation Platform, uses the separate `srl-expanded` profile. It retains the three SR Linux routers and adds Linux endpoints H1 and H2 for end-to-end traffic validation. Project 1 provides automation capabilities and lab infrastructure; Project 2 owns the network-behavior test suite.
+`network-test-validation-platform`, the Network Test & Validation Platform, uses the separate `srl-expanded` profile. It retains the three SR Linux routers and adds Linux endpoints H1 and H2 for end-to-end traffic validation. `network-automation-platform` provides automation capabilities and lab infrastructure; `network-test-validation-platform` owns the network-behavior test suite.
 
 See [Network Topology](docs/network-topology.md) for both lab profiles and their responsibilities.
 
@@ -242,6 +244,8 @@ See [Testing and CI/CD](docs/testing-and-ci-cd.md) for the pipeline details and 
 The RESTCONF demonstration remains deferred and is not part of the completed core workflow. No license file is currently specified for the repository.
 
 **Streaming telemetry extension: complete.** The primary three-router lab now uses gNMIc, Prometheus, and Grafana for OpenConfig interface-counter and operational-status monitoring. See [Streaming Telemetry and Monitoring](docs/streaming-telemetry.md).
+
+![SR Linux Streaming Telemetry Dashboard](docs/images/grafana-dashboard.png)
 
 Detailed documentation:
 

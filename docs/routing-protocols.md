@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-Project 1 uses two routing protocols in its three-router Nokia SR Linux
+`network-automation-platform` uses two routing protocols in its three-router Nokia SR Linux
 Containerlab environment:
 
 - OSPF (Open Shortest Path First): the Interior Gateway Protocol used
@@ -50,21 +50,7 @@ be used when examining routing information.
 
 ## 3. OSPF — Interior Gateway Routing
 
-### 3.1 What is OSPF?
-
-OSPF stands for Open Shortest Path First.
-
-It is a link-state Interior Gateway Protocol (IGP) used to exchange
-routing information within an autonomous system.
-
-Routers running OSPF discover neighbours, form adjacencies, exchange
-link-state information and calculate routes using the Shortest Path
-First algorithm.
-
-OSPF uses areas to organise the routing domain. The primary Project 1
-lab uses Area 0.0.0.0.
-
-### 3.2 OSPF configuration in Project 1
+### 3.1 OSPF configuration in `network-automation-platform`
 
 The three routers use the following router IDs:
 
@@ -85,7 +71,7 @@ All three routers participate in Area 0.0.0.0.
 The OSPF configuration is present in the router startup configuration
 files under `configs/srl/`.
 
-### 3.3 OSPF neighbour states
+### 3.2 OSPF neighbour states
 
 OSPF neighbours progress through states while establishing an
 adjacency. The Full state indicates that the adjacency has completed
@@ -100,7 +86,7 @@ docker exec clab-srl-lab-R1 sr_cli -c \
 
 Repeat for R2 and R3.
 
-### 3.4 Verified OSPF result
+### 3.3 Verified OSPF result
 
 The live lab verification returned two neighbours per router.
 
@@ -113,7 +99,7 @@ The live lab verification returned two neighbours per router.
 This confirms that all three routers have established their expected
 OSPF adjacencies in the primary lab.
 
-### 3.5 OSPF in the automation workflow and CI
+### 3.4 OSPF in the automation workflow and CI
 
 OSPF is used by the project as the primary lab's routing protocol and
 as a readiness condition for live integration testing.
@@ -134,31 +120,9 @@ functionality, including neighbour and configuration-related tests.
 
 ## 4. BGP — Border Gateway Protocol
 
-### 4.1 What is BGP?
+### 4.1 BGP design in `network-automation-platform`
 
-BGP stands for Border Gateway Protocol.
-
-It is a path-vector routing protocol used to exchange routing
-information between autonomous systems.
-
-An autonomous system (AS) is a routing domain identified by an
-autonomous system number (ASN).
-
-BGP peers establish sessions and exchange network prefixes. BGP
-selects paths using attributes such as AS_PATH, LOCAL_PREF and
-other routing-policy inputs.
-
-Unlike OSPF, which forms link-state adjacencies, BGP establishes
-a TCP-based peering session.
-
-The two important operational states to understand are:
-
-- OSPF: Full
-- BGP: Established
-
-### 4.2 BGP design in Project 1
-
-Project 1 configures eBGP between three routers. Each router has a
+`network-automation-platform` configures eBGP between three routers. Each router has a
 different autonomous system number.
 
 | Router | Local AS | BGP router ID |
@@ -170,7 +134,7 @@ different autonomous system number.
 Because each router has a different AS number, the configured
 relationships are eBGP sessions.
 
-### 4.3 BGP neighbour relationships
+### 4.2 BGP neighbour relationships
 
 The topology uses a full-mesh arrangement: every router peers
 directly with the other two routers.
@@ -186,7 +150,7 @@ directly with the other two routers.
 
 Each router has two configured BGP neighbours.
 
-### 4.4 BGP desired state and configuration automation
+### 4.3 BGP desired state and configuration automation
 
 BGP desired-state configuration is represented in:
 
@@ -222,7 +186,7 @@ the three router loopbacks:
 The `allow-bgp-loopbacks` policy has a default reject action and
 permits the configured loopback prefixes.
 
-### 4.5 BGP operational session verification
+### 4.4 BGP operational session verification
 
 Configuration read-back and operational session verification are
 different checks.
@@ -267,7 +231,7 @@ The detailed output also provides information such as:
 A BGP session in Established state confirms that the BGP peer
 relationship has reached its operational state.
 
-### 4.6 BGP received and advertised routes
+### 4.5 BGP received and advertised routes
 
 To inspect routes received from a neighbour:
 
@@ -294,7 +258,7 @@ These checks help establish whether the session is exchanging routing
 information rather than simply remaining established without useful
 prefix exchange.
 
-### 4.7 Verified live BGP result
+### 4.6 Verified live BGP result
 
 The live SR Linux BGP summary reported:
 
@@ -325,7 +289,7 @@ selected paths and AS_PATH information.
 These results demonstrate that BGP sessions are established and
 routing information is being exchanged in the live lab.
 
-### 4.8 Current boundary of automated BGP verification
+### 4.7 Current boundary of automated BGP verification
 
 The live router CLI verification above establishes that BGP is
 operational in the current lab.
@@ -345,22 +309,7 @@ test within the Python workflow.
 Do not confuse successful NETCONF configuration application with
 successful BGP session establishment.
 
-## 5. OSPF and BGP Comparison
-
-| Area | OSPF | BGP |
-|---|---|---|
-| Full name | Open Shortest Path First | Border Gateway Protocol |
-| Protocol type | Link-state IGP | Path-vector EGP |
-| Main purpose | Routing within an autonomous system | Routing between autonomous systems |
-| Neighbour relationship | OSPF adjacency | BGP peering session |
-| Transport | IP protocol 89 | TCP port 179 |
-| Important state | Full | Established |
-| Main path mechanism | Shortest Path First calculation | BGP path selection and policy |
-| Project 1 role | Primary lab routing and CI readiness | Full-mesh eBGP configuration and live peer operation |
-| Live state verification | OSPF neighbour CLI | BGP summary and neighbour detail CLI |
-| Python automation boundary | OSPF state and configuration validation | BGP configuration read-back and drift validation; operational session assertion remains future work |
-
-## 6. Troubleshooting Checklist
+## 5. Troubleshooting Checklist
 
 ### OSPF
 
@@ -403,7 +352,7 @@ docker exec clab-srl-lab-R1 sr_cli -c \
   'show network-instance default protocols bgp neighbor 10.0.12.2 detail'
 ```
 
-## 7. Future Automation Improvements
+## 6. Future Automation Improvements
 
 The next useful enhancement is to bring BGP operational verification
 into the Python automation workflow.
@@ -426,9 +375,9 @@ Potential implementation steps:
 Any OpenConfig or native YANG path should be verified against the
 running SR Linux version before it is treated as supported.
 
-## 8. Final Summary
+## 7. Final Summary
 
-Project 1 has a working three-router OSPF and eBGP environment.
+`network-automation-platform` has a working three-router OSPF and eBGP environment.
 
 Live verification confirmed:
 

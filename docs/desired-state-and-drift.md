@@ -19,7 +19,7 @@ The documented desired-state resources include:
 - OSPF configuration
 - BGP desired-state configuration support
 
-BGP desired-state and NETCONF configuration support was added as an implemented Project 1 extension. This document does not claim that BGP operational session state is included in the normalized gNMI state-discovery model.
+BGP desired-state and NETCONF configuration support was added as an implemented `network-automation-platform` extension. This document does not claim that BGP operational session state is included in the normalized gNMI state-discovery model.
 
 ## 2. Actual-State Discovery
 

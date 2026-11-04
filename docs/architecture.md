@@ -175,7 +175,7 @@ NETCONF is the primary model-driven configuration mechanism in the live closed-l
 - **Docker** packages the Python automation application. The application container and the Containerlab devices have separate responsibilities.
 - **GitHub Actions** provisions the lab for CI, waits for OSPF readiness, runs tests, builds the application image, stops the lab, and uploads test-result artifacts.
 
-The expanded topology with Linux endpoints belongs to the Project 2 validation environment. See [Network Topology](network-topology.md).
+The expanded topology with Linux endpoints belongs to the `network-test-validation-platform` validation environment. See [Network Topology](network-topology.md).
 
 ## 7. Routing Configuration Scope
 

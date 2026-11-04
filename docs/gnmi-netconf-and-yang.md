@@ -2,7 +2,7 @@
 
 ## 1. Management-Plane Overview
 
-Project 1 uses gNMI as the primary mechanism for operational state discovery and NETCONF as the primary model-driven configuration mechanism. YANG provides the data-model foundation for structured device management.
+`network-automation-platform` uses gNMI as the primary mechanism for operational state discovery and NETCONF as the primary model-driven configuration mechanism. YANG provides the data-model foundation for structured device management.
 
 ## 2. gNMI State Discovery
 
@@ -43,7 +43,7 @@ Compare and Verify
 
 ## 4. Streaming Telemetry with gNMIc
 
-In addition to the Python application's on-demand gNMI state-discovery client, Project 1 includes a separate streaming telemetry pipeline based on gNMIc.
+In addition to the Python application's on-demand gNMI state-discovery client, `network-automation-platform` includes a separate streaming telemetry pipeline based on gNMIc.
 
 The pipeline collects telemetry from R1, R2, and R3 in the primary three-router Containerlab topology.
 
