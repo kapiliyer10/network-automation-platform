@@ -533,3 +533,43 @@ Do not expose unauthenticated development endpoints to untrusted
 networks.
 
 Never commit `.env`, private keys, passwords, or other credentials.
+
+## 16. Lab Lifecycle and TLS Identity
+
+### Fixed management addresses
+
+The primary lab assigns explicit management IPv4 addresses to the three routers. Each address matches the IP Subject Alternative Name (SAN) in that router's generated TLS certificate.
+
+| Router | Management IPv4 address |
+|---|---|
+| R1 | `172.20.20.4` |
+| R2 | `172.20.20.2` |
+| R3 | `172.20.20.3` |
+
+These assignments are defined using `mgmt-ipv4` in `topology/srl-lab.clab.yml`. They prevent router identity mismatches when the lab is redeployed.
+
+### Normal startup and shutdown
+
+The normal lifecycle scripts preserve the resources required by the monitoring stack:
+
+- `scripts/lab_up.sh` deploys the topology without `--reconfigure`, reusing existing generated TLS artifacts.
+- `scripts/lab_down.sh` destroys the router containers with `--keep-mgmt-net`, preserving the Docker management network used by gNMIc, Prometheus, and Grafana.
+
+After redeploying the routers, gNMIc may need to re-establish its streaming subscriptions. The verified recovery procedure is:
+
+```bash
+docker restart gnmic
+```
+
+Verify that both telemetry metric families return three router sources:
+
+- `srl_openconfig_interfaces_interfaces_interface_state_counters_in_octets`
+- `srl_openconfig_interfaces_interfaces_interface_state_oper_status`
+
+All three operational-status labels should report `UP`. A healthy Prometheus scrape target alone does not prove that all router subscriptions are healthy.
+
+### Clean reconfiguration and certificates
+
+`containerlab deploy --reconfigure` is not the normal startup procedure. It regenerates Containerlab artifacts, including TLS certificates.
+
+After an intentional clean reconfiguration, verify the generated router certificates and CA. Recreate the gNMIc container with the regenerated CA file mounted at `/etc/gnmic/ca.pem`; restarting an existing container may retain an older bind-mounted certificate file. Then verify TLS connectivity and all three telemetry sources again.

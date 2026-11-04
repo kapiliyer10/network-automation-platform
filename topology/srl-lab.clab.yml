@@ -5,16 +5,19 @@ topology:
     R1:
       kind: nokia_srlinux
       image: ghcr.io/nokia/srlinux:latest
+      mgmt-ipv4: 172.20.20.4
       startup-config: ~/network-automation-platform/configs/srl/R1.cli
 
     R2:
       kind: nokia_srlinux
       image: ghcr.io/nokia/srlinux:latest
+      mgmt-ipv4: 172.20.20.2
       startup-config: ~/network-automation-platform/configs/srl/R2.cli
 
     R3:
       kind: nokia_srlinux
       image: ghcr.io/nokia/srlinux:latest
+      mgmt-ipv4: 172.20.20.3
       startup-config: ~/network-automation-platform/configs/srl/R3.cli
 
   links:
