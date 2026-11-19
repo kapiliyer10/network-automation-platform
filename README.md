@@ -2,138 +2,149 @@
 
 [![CI](https://github.com/kapiliyer10/network-automation-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/kapiliyer10/network-automation-platform/actions/workflows/ci.yml)
 
-A Python-based network automation platform for Nokia SR Linux that implements a closed-loop, model-driven workflow: retrieve device state, normalize it, compare it with desired state, detect drift, apply configuration changes, and verify the result.
+A Python-based network automation platform for Nokia SR Linux, developed and tested in a three-router Containerlab environment.
 
-The platform combines **Python, gNMI, YANG, NETCONF, Jinja2, Ansible, FastAPI, Docker, pytest, and GitHub Actions** in a reproducible Containerlab environment.
+The platform automates device-state discovery, comparison against YAML-based desired configurations, configuration drift detection, and network configuration management. It uses gNMI to retrieve device state and NETCONF/YANG as the primary model-driven configuration mechanism. FastAPI provides REST API access, Ansible supports orchestration, and a separate telemetry pipeline uses gNMIc, Prometheus, and Grafana for network monitoring.
 
 ## 1. Project Overview
 
-The goal is to build a reusable network automation application rather than a collection of standalone scripts. Python owns the automation and validation logic; FastAPI exposes that workflow through a REST API, and Ansible provides an orchestration interface.
+The platform follows a desired-state approach: it retrieves actual device state and compares it against the intended configuration. Detected discrepancies can be reconciled through configuration changes, followed by read-back verification.
 
-The central workflow is:
+### Core Automation Workflow
 
-```text
-Desired State + Device Inventory
-              |
-              v
-      Discover Actual State
-              |
-              v
-      Normalize Device Data
-              |
-              v
-   Compare Desired vs Actual
-              |
-              v
-       Detect Configuration Drift
-              |
-       +------+------+
-       |             |
-    No Drift       Drift
-       |             |
-       |             v
-       |      Generate Configuration
-       |             |
-       |             v
-       |       Apply Configuration
-       |             |
-       +------+------+
-              |
-              v
-      Retrieve and Verify State
-              |
-              v
-        Report Result
+```mermaid
+flowchart TD
+    A["Desired State and Device Inventory<br/>YAML"]
+    B["Python Automation Engine"]
+    C["Retrieve Device State<br/>gNMI"]
+    D["Normalize Device State"]
+    E["Compare Desired and Actual State"]
+    F{"Configuration Drift Detected?"}
+    G["Apply Required Configuration<br/>NETCONF / YANG"]
+    H["Read-back Verification"]
+    I["Report: No Changes Required"]
+    J["Report Configuration Result"]
+
+    A --> B --> C --> D --> E --> F
+    F -- No --> I
+    F -- Yes --> G --> H --> J
 ```
-
-A successful configuration operation is not treated as proof of success by itself. The workflow retrieves state again and validates the result.
-
 ## 2. Key Features
 
-- **Device inventory and endpoint discovery:** loads YAML inventory and resolves runtime device endpoints.
-- **gNMI state discovery:** retrieves device state and converts device-specific responses into a normalized application model.
-- **Streaming telemetry and observability:** uses gNMIc, OpenConfig, Prometheus, and Grafana to collect and visualize live SR Linux interface telemetry.
-- **Desired-state management:** represents intended network configuration in YAML.
-- **Drift detection:** compares desired and actual state and reports discrepancies.
-- **Configuration generation:** renders SR Linux CLI configuration with Jinja2 and supports model-driven NETCONF/YANG configuration.
-- **NETCONF verification:** applies configuration and supports configuration read-back and post-change verification.
-- **Routing protocols:** the primary lab runs OSPF and a three-router eBGP full mesh. All six BGP sessions and route exchange were verified through the SR Linux CLI. The Python application manages BGP configuration but does not yet automate peer-state or route-table validation.
-- **Orchestration and API:** integrates Ansible and exposes workflow operations through FastAPI.
-- **Packaging and automation:** packages the application with Docker and runs tests through GitHub Actions.
+### Network State Discovery and Drift Detection
+
+- **Device inventory and endpoint discovery:** Loads YAML-based device inventory and resolves runtime device endpoints.
+- **gNMI state discovery:** Retrieves device state and normalizes device-specific responses into an application model.
+- **Desired-state management:** Maintains intended network configurations in YAML.
+- **Configuration drift detection:** Compares desired and actual device state to identify and report discrepancies.
+
+### Configuration Management and Routing
+
+- **NETCONF/YANG configuration:** Supports model-driven configuration deployment and configuration read-back verification.
+- **Jinja2 configuration generation:** Renders Nokia SR Linux CLI configuration through a separate configuration-generation path.
+- **Routing protocol configuration:** Supports OSPF and BGP configuration management. The three-router lab runs OSPF and an eBGP full mesh; all six BGP peer sessions and route exchange have been verified through the SR Linux CLI.
+
+  **Current limitation:** The Python application does not yet automate operational BGP peer-state or route-table validation.
+
+### API, Orchestration and CI/CD
+
+- **REST API:** Exposes network automation workflows through FastAPI.
+- **Automation orchestration:** Integrates Ansible to invoke automation workflows.
+- **Containerization:** Uses Docker to package the application.
+- **Automated testing and CI/CD:** Uses pytest and GitHub Actions to execute automated tests and validate changes.
+
+### Streaming Telemetry and Observability
+
+- **Telemetry collection:** Uses gNMIc and OpenConfig to collect SR Linux interface telemetry.
+- **Metrics monitoring:** Uses Prometheus to collect and store telemetry metrics.
+- **Visualization:** Uses Grafana dashboards to monitor interface counters and operational status.
 
 ## 3. Architecture
 
-The application has separate access/orchestration interfaces, a Python automation workflow, and a Containerlab network environment. The Jinja2 CLI renderer is a separate configuration-rendering path; NETCONF is the primary model-driven live configuration path.
+The platform separates its core automation workflow, management interfaces, and monitoring infrastructure.
 
-See **[System Architecture](docs/architecture.md)** for the component diagram, data flow, and configuration paths. The monitoring pipeline is documented in [Streaming Telemetry and Monitoring](docs/streaming-telemetry.md).
+- **Core automation:** The Python engine processes desired state, retrieves device state through gNMI, detects configuration drift, and manages configuration reconciliation.
+- **Management interfaces:** FastAPI exposes the automation workflow through REST endpoints, while Ansible provides orchestration.
+- **Configuration methods:** NETCONF/YANG is the primary mechanism for live model-driven configuration. Jinja2 provides a separate CLI configuration-rendering path.
+- **Monitoring pipeline:** gNMIc collects streaming telemetry, Prometheus stores metrics, and Grafana provides visualization. This pipeline operates separately from the configuration workflow.
+
+For detailed component diagrams and implementation flows, see [System Architecture](docs/architecture.md) and [Streaming Telemetry and Monitoring](docs/streaming-telemetry.md).
 
 ## 4. Network Lab
 
-The primary `network-automation-platform` lab is a three-router Nokia SR Linux topology running in Containerlab:
+The platform is developed and tested on a three-router Nokia SR Linux topology deployed using Containerlab.
 
-```text
-                 R1
-                /  \
-               /    \
-              /      \
-             R2------R3
+### Network Topology
+
+```mermaid
+flowchart TD
+    R1["R1"]
+    R2["R2"]
+    R3["R3"]
+
+    R1 ---|10.0.12.0/30| R2
+    R1 ---|10.0.31.0/30| R3
+    R2 ---|10.0.23.0/30| R3
 ```
 
-It provides management connectivity, IPv4 connectivity, OSPF routing, gNMI access, and NETCONF access. The topology definition is `topology/srl-lab.clab.yml`; router startup configurations are under `configs/srl/`.
+### Routing and Management
 
-eBGP full mesh (AS 65001–65003) running; see `docs/routing-protocols.md`.
+- **OSPF:** Provides internal routing across the three-router topology.
+- **eBGP:** A full-mesh peering arrangement runs across AS 65001–65003. All six BGP peer sessions and route exchange have been verified through the SR Linux CLI.
+- **Management:** gNMI and NETCONF provide device access for state retrieval and configuration management.
 
-Start and stop the primary lab from the repository root:
+The Containerlab topology is defined in `topology/srl-lab.clab.yml`, with router startup configurations maintained under `configs/srl/`.
 
-```bash
-./scripts/lab_up.sh
-./scripts/lab_down.sh
-```
+### Related Network Test and Validation Project
 
-### Relationship to `network-test-validation-platform`
+A separate project, `network-test-validation-platform`, uses an expanded lab profile named `srl-expanded`. It retains the three SR Linux routers and adds Linux endpoints H1 and H2 for end-to-end traffic testing.
 
-`network-test-validation-platform`, the Network Test & Validation Platform, uses the separate `srl-expanded` profile. It retains the three SR Linux routers and adds Linux endpoints H1 and H2 for end-to-end traffic validation. `network-automation-platform` provides automation capabilities and lab infrastructure; `network-test-validation-platform` owns the network-behavior test suite.
+The responsibilities are separated:
+- `network-automation-platform`: Network automation, device management, and configuration workflows.
+- `network-test-validation-platform`: Network behavior testing and end-to-end validation.
 
-See [Network Topology](docs/network-topology.md) for both lab profiles and their responsibilities.
+See [Network Topology](docs/network-topology.md) for details about both lab profiles.
 
 ## 5. Technology Stack
 
-| Area | Technologies |
+| Category | Technologies |
 |---|---|
-| Programming and environment | Python 3.12, Linux, YAML, Git |
-| Network environment | Nokia SR Linux, Containerlab, Docker, IPv4, OSPF |
-| Model-driven management | gNMI, YANG, NETCONF |
-| Streaming telemetry and monitoring | gNMIc, OpenConfig, Prometheus, Grafana |
-| Routing protocols | OSPF lab routing; BGP desired-state / NETCONF configuration and read-back validation |
-| Configuration and orchestration | Jinja2, Ansible |
-| Application interface | FastAPI, REST API, Uvicorn |
-| Testing and CI/CD | pytest, GitHub Actions, live NETCONF integration tests |
+| Programming and Development | Python 3.12, Linux, YAML, Git |
+| Network Infrastructure | Nokia SR Linux, Containerlab, Docker, IPv4 |
+| Routing Protocols | OSPF, BGP |
+| Network Programmability | gNMI, NETCONF, YANG, OpenConfig |
+| Configuration and Orchestration | Jinja2, Ansible |
+| API Development | FastAPI, REST API, Uvicorn |
+| Monitoring and Observability | gNMIc, Prometheus, Grafana |
+| Testing and CI/CD | pytest, GitHub Actions |
 
 ## 6. Repository Structure
 
+The repository is organized into application modules, network configuration, automation workflows, and supporting infrastructure.
+
 ```text
 .
-├── .github/workflows/       # GitHub Actions CI workflow
-├── ansible/                 # Ansible playbook and inventory
+├── .github/workflows/       # GitHub Actions CI pipeline
+├── ansible/                 # Ansible playbooks and inventory
 ├── configs/
-│   ├── desired/             # Desired network state
-│   ├── inventory/           # Device inventory
-│   └── srl/                 # Primary lab startup configuration
+│   ├── desired/             # Desired network configurations
+│   ├── inventory/           # Network device inventory
+│   └── srl/                 # Nokia SR Linux startup configurations
 ├── docs/                    # Architecture and technical documentation
-├── generated/               # Rendered CLI configuration output
-├── scripts/                 # Lab lifecycle and workflow entry points
+├── generated/               # Generated CLI configuration files
+├── scripts/                 # Lab lifecycle and automation scripts
 ├── src/
 │   ├── api/                 # FastAPI application
-│   ├── config/              # CLI and NETCONF configuration handling
+│   ├── config/              # Configuration rendering and NETCONF handling
 │   ├── desired/             # Desired-state loading and comparison
-│   ├── inventory/           # Inventory loading
-│   ├── network/             # gNMI, NETCONF, state, and endpoint resolution
-│   ├── reporting.py
-│   └── workflow.py
-├── templates/               # Jinja2 templates
+│   ├── inventory/           # Device inventory handling
+│   ├── network/             # gNMI, NETCONF and device-state operations
+│   ├── reporting.py         # Automation result reporting
+│   └── workflow.py          # Core automation workflow
+├── templates/               # Jinja2 configuration templates
 ├── telemetry/               # gNMIc and Prometheus configuration
-├── tests/                   # Unit/application and integration tests
-├── topology/                # Containerlab topology definitions and endpoint assets
+├── tests/                   # Unit, application and integration tests
+├── topology/                # Containerlab topology definitions
 ├── Dockerfile
 ├── requirements.txt
 └── README.md
@@ -141,15 +152,17 @@ See [Network Topology](docs/network-topology.md) for both lab profiles and their
 
 ## 7. Getting Started
 
+Follow these steps to set up the application, deploy the network lab, and run the automation platform locally.
+
 ### Prerequisites
 
 - Linux environment
 - Python 3.12
-- Docker
+- Docker with the Docker daemon running
 - Containerlab
 - Git
 
-### Clone and install
+### 1. Clone the Repository and Install Dependencies
 
 ```bash
 git clone https://github.com/kapiliyer10/network-automation-platform.git
@@ -160,31 +173,50 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Configure credentials
+### 2. Configure Credentials
+
+Create your local environment file:
 
 ```bash
 cp .env.example .env
 ```
 
-Populate `.env` with the required local credentials. Do not commit `.env` or other secrets.
+Populate `.env` with the required credentials for your environment. Keep credentials and other secrets out of version control; do not commit `.env`.
 
-### Start the lab and wait for routing convergence
+### 3. Deploy the Network Lab
+
+Start the three-router Nokia SR Linux topology and wait for OSPF convergence:
 
 ```bash
 ./scripts/lab_up.sh
 ./scripts/wait_for_ospf.sh
 ```
 
-### Run tests and start the API
+### 4. Run the Automated Tests
+
+With the lab running and the virtual environment activated, execute the test suite:
 
 ```bash
 pytest -q
+```
+
+### 5. Start the REST API
+
+Start the FastAPI application:
+
+```bash
 uvicorn src.api.main:app --host 0.0.0.0 --port 8000
 ```
 
-The API documentation is available through FastAPI's interactive documentation interface at `/docs` while the service is running.
+Once the service is running, access the interactive API documentation at:
 
-### Stop the lab
+`http://127.0.0.1:8000/docs`
+
+Keep the API process running while using the endpoints. Stop it with `Ctrl+C` when finished.
+
+### 6. Stop the Network Lab
+
+After completing your work, shut down the Containerlab environment:
 
 ```bash
 ./scripts/lab_down.sh
@@ -192,33 +224,50 @@ The API documentation is available through FastAPI's interactive documentation i
 
 ## 8. API Reference
 
-The API is implemented in `src/api/main.py` and delegates to the existing Python workflow.
+The platform exposes its network automation capabilities through a REST API built with FastAPI. The API is implemented in `src/api/main.py` and delegates operations to the existing Python automation workflow.
+
+### Available Endpoints
 
 | Method | Endpoint | Purpose |
 |---|---|---|
-| `GET` | `/` | API root; returns an informational message |
-| `GET` | `/devices` | List inventory devices |
-| `GET` | `/devices/{id}` | Retrieve one device from inventory |
-| `GET` | `/devices/{id}/state` | Retrieve normalized device state |
-| `POST` | `/devices/{id}/validate` | Validate a device against desired state |
-| `POST` | `/devices/{id}/configure` | Reconcile a device with desired state |
-| `GET` | `/drift` | Validate all devices and summarize drift |
+| `GET` | `/` | Returns an informational API message |
+| `GET` | `/devices` | Lists devices from the inventory |
+| `GET` | `/devices/{id}` | Retrieves inventory details for a device |
+| `GET` | `/devices/{id}/state` | Retrieves normalized device state |
+| `POST` | `/devices/{id}/validate` | Compares device state against desired configuration |
+| `POST` | `/devices/{id}/configure` | Reconciles device configuration with desired state |
+| `GET` | `/drift` | Checks all inventoried devices and summarizes configuration drift |
 
-Example requests:
+### Example API Requests
+
+The following examples assume the API is running locally on port `8000`.
 
 ```bash
+# List inventory devices
 curl http://127.0.0.1:8000/devices
+
+# Retrieve device state
 curl http://127.0.0.1:8000/devices/R1/state
+
+# Validate device configuration
 curl -X POST http://127.0.0.1:8000/devices/R1/validate
+
+# Reconcile device configuration
 curl -X POST http://127.0.0.1:8000/devices/R1/configure
+
+# Check configuration drift across devices
 curl http://127.0.0.1:8000/drift
 ```
 
-The `/devices/{id}/configure` endpoint performs desired-state reconciliation; it does not accept arbitrary configuration in the request body. See [FastAPI Reference](docs/fastapi-reference.md) for details.
+**Note:** The `/devices/{id}/validate` endpoint checks the device against its desired state. The `/devices/{id}/configure` endpoint performs desired-state reconciliation; it does not accept arbitrary configuration in the request body.
+
+For endpoint implementation details and additional examples, see the [FastAPI Reference](docs/fastapi-reference.md).
 
 ## 9. Testing and CI/CD
 
-Run the test suites locally:
+The platform uses pytest for automated testing, including application-level tests and integration tests against the Containerlab network environment.
+
+### Running Tests Locally
 
 ```bash
 # Application and non-integration tests
@@ -227,35 +276,63 @@ pytest -q --ignore=tests/integration
 # Live network integration tests
 pytest -q tests/integration
 
-# Complete suite
+# Complete test suite
 pytest -q
 ```
 
-**Latest verified full-suite result:** `100 passed in 87.47s` in the Docker-hosted test run recorded during project validation. Test duration and count can change as the environment and code evolve.
+### Test Results
 
-The GitHub Actions workflow (`.github/workflows/ci.yml`) runs on pushes and pull requests targeting `main`. It installs Containerlab and Python dependencies, starts the lab, waits for OSPF convergence, runs a Python compile check and both test groups, builds the Docker image, stops the lab, and uploads JUnit XML test results.
+**Recorded full-suite result:** `100 passed in 87.47s` in a Docker-hosted test run during project validation. Test counts and execution times may vary with code changes and the test environment.
 
-See [Testing and CI/CD](docs/testing-and-ci-cd.md) for the pipeline details and test scope.
+The test suites cover application functionality and interactions with the live network lab, including network configuration and management workflows.
 
-## 10. Project Status and Documentation
+### Continuous Integration
 
-**Core implementation: complete.** The platform includes state discovery, desired-state comparison, drift detection, configuration generation, NETCONF configuration and verification, Ansible orchestration, a FastAPI interface, Docker packaging, automated tests, and GitHub Actions CI/CD. The primary lab's three-router eBGP full mesh has been verified live: all six peer sessions reached Established and BGP routes were exchanged. The Python application supports BGP configuration management and read-back validation, but does not yet automate operational peer-state or route-table checks.
+GitHub Actions automates the validation workflow through `.github/workflows/ci.yml`. The pipeline runs on pushes and pull requests targeting `main` and performs the following steps:
 
-The RESTCONF demonstration remains deferred and is not part of the completed core workflow. No license file is currently specified for the repository.
+1. Installs Containerlab and Python dependencies.
+2. Deploys the network lab and waits for OSPF convergence.
+3. Runs Python compilation checks and both application and integration test groups.
+4. Builds the application Docker image.
+5. Stops the network lab and uploads JUnit XML test results.
 
-**Streaming telemetry extension: complete.** The primary three-router lab now uses gNMIc, Prometheus, and Grafana for OpenConfig interface-counter and operational-status monitoring. See [Streaming Telemetry and Monitoring](docs/streaming-telemetry.md).
+For detailed test coverage, execution procedures, and CI pipeline information, see [Testing and CI/CD](docs/testing-and-ci-cd.md).
+
+## 10. Project Status
+
+The core automation workflow and streaming telemetry extension have been implemented and verified in the primary three-router Nokia SR Linux lab.
+
+### Implemented and Verified
+
+- **Network automation:** Device-state discovery, desired-state comparison, drift detection, NETCONF configuration, and read-back verification.
+- **Network environment:** Three-router OSPF topology and eBGP full-mesh connectivity. All six BGP peer sessions reached Established, and route exchange was verified through the SR Linux CLI.
+- **Application integration:** FastAPI, Ansible, and Docker integration.
+- **Testing and CI/CD:** Automated pytest suites and GitHub Actions pipeline.
+- **Monitoring:** Streaming telemetry using gNMIc and OpenConfig, with Prometheus metrics and Grafana dashboards for interface counters and operational status.
+
+### Scope and Limitations
+
+The RESTCONF demonstration remains deferred and is not part of the completed core workflow. BGP operational peer-state and route-table validation limitations are documented under [Key Features](#2-key-features).
+
+### Telemetry Dashboard
+
+The following dashboard shows the streaming telemetry monitoring implemented for the three-router lab.
 
 ![SR Linux Streaming Telemetry Dashboard](docs/images/grafana-dashboard.png)
 
-Detailed documentation:
+### Technical Documentation
 
-- [System Architecture](docs/architecture.md)
-- [Network Topology](docs/network-topology.md)
-- [Routing Protocols: OSPF and BGP](docs/routing-protocols.md)
-- [Desired State and Drift Detection](docs/desired-state-and-drift.md)
-- [gNMI, NETCONF, and YANG](docs/gnmi-netconf-and-yang.md)
-- [Streaming Telemetry and Monitoring](docs/streaming-telemetry.md)
-- [Configuration Generation and Ansible](docs/configuration-and-ansible.md)
-- [FastAPI Reference](docs/fastapi-reference.md)
-- [Testing and CI/CD](docs/testing-and-ci-cd.md)
-- [Milestones](docs/milestones.md)
+The following documents provide additional implementation details:
+
+| Area | Documentation |
+|---|---|
+| Architecture | [System Architecture](docs/architecture.md) |
+| Network Design | [Network Topology](docs/network-topology.md) |
+| Routing | [OSPF and BGP](docs/routing-protocols.md) |
+| Configuration Management | [Desired State and Drift Detection](docs/desired-state-and-drift.md) |
+| Network Programmability | [gNMI, NETCONF and YANG](docs/gnmi-netconf-and-yang.md) |
+| Configuration and Orchestration | [Jinja2 and Ansible](docs/configuration-and-ansible.md) |
+| API Development | [FastAPI Reference](docs/fastapi-reference.md) |
+| Monitoring | [Streaming Telemetry and Monitoring](docs/streaming-telemetry.md) |
+| Quality Assurance | [Testing and CI/CD](docs/testing-and-ci-cd.md) |
+| Development Progress | [Project Milestones](docs/milestones.md) |
