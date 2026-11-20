@@ -16,37 +16,9 @@ states have been inspected using the SR Linux CLI.
 This document separates live protocol verification from the Python
 application's automated configuration and state-validation capabilities.
 
-## 2. Primary Lab Topology
+## 2. Primary Lab Addressing
 
-The primary topology consists of three Nokia SR Linux routers connected
-in a triangle.
-
-```text
-                  R1
-                 /  \
-                /    \
-               /      \
-              R2------R3
-```
-
-### 2.1 Point-to-point links
-
-| Link | Subnet | First router | Second router |
-|---|---|---|---|
-| R1-R2 | 10.0.12.0/30 | R1: 10.0.12.1 | R2: 10.0.12.2 |
-| R2-R3 | 10.0.23.0/30 | R2: 10.0.23.1 | R3: 10.0.23.2 |
-| R3-R1 | 10.0.31.0/30 | R3: 10.0.31.2 | R1: 10.0.31.1 |
-
-### 2.2 Loopback addresses
-
-| Router | Loopback |
-|---|---|
-| R1 | 10.255.0.1/32 |
-| R2 | 10.255.0.2/32 |
-| R3 | 10.255.0.3/32 |
-
-The loopbacks provide stable router identifiers and prefixes that can
-be used when examining routing information.
+The primary lab topology, router links, point-to-point subnets, loopback addresses, and management addresses are maintained in [Network Topology](network-topology.md). The protocol-specific router IDs and BGP peer relationships are described in the sections below.
 
 ## 3. OSPF — Interior Gateway Routing
 
