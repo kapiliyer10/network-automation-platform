@@ -28,6 +28,22 @@ The three routers use fixed management IPv4 addresses on the Containerlab `clab`
 
 The addresses are explicitly assigned through `mgmt-ipv4` in `topology/srl-lab.clab.yml`. Router startup configurations are maintained under `configs/srl/`.
 
+### Router Link and Loopback Addressing
+
+| Link | Subnet | First router | Second router |
+|---|---|---|---|
+| R1-R2 | `10.0.12.0/30` | R1: `10.0.12.1` | R2: `10.0.12.2` |
+| R2-R3 | `10.0.23.0/30` | R2: `10.0.23.1` | R3: `10.0.23.2` |
+| R3-R1 | `10.0.31.0/30` | R3: `10.0.31.2` | R1: `10.0.31.1` |
+
+| Router | Loopback |
+|---|---|
+| R1 | `10.255.0.1/32` |
+| R2 | `10.255.0.2/32` |
+| R3 | `10.255.0.3/32` |
+
+The loopbacks provide stable router identifiers and prefixes for routing verification.
+
 ### Lab Lifecycle and Readiness
 
 Start and stop the primary lab from the repository root:
@@ -53,28 +69,9 @@ The destructive `--reconfigure` operation is not part of normal startup. It rege
 
 ### Streaming Telemetry and Monitoring
 
-The primary three-router lab runs a separate telemetry pipeline monitoring `ethernet-1/1` on R1, R2, and R3. It does not require the expanded validation topology or its Linux endpoints.
+The primary lab also supplies telemetry to the independent gNMIc, Prometheus, and Grafana monitoring stack. These services run as separate Docker containers and do not add Containerlab nodes or change the router topology.
 
-**Monitoring data flow:**
-
-**SR Linux R1/R2/R3** → **gNMIc** → **Prometheus** → **Grafana**
-
-The monitoring components run as Docker containers on the `clab` network. The monitoring pipeline operates independently of the Python automation workflow.
-
-| Component  | Role                                              | Endpoint                            |
-| ---------- | ------------------------------------------------- | ----------------------------------- |
-| gNMIc      | Collects OpenConfig telemetry and exports metrics | `9804/metrics`                      |
-| Prometheus | Scrapes and stores telemetry time series          | Port `9090`                         |
-| Grafana    | Displays the telemetry dashboard                  | Port `3000`, bound to host loopback |
-
-The gNMIc subscriptions use secure gNMI over TCP port `57400`, with TLS CA validation and credentials supplied through environment variables. Interface telemetry is sampled every five seconds, and Prometheus scrapes the exporter every 15 seconds.
-
-Monitoring configuration:
-
-- `telemetry/gnmic.yaml`
-- `telemetry/prometheus.yml`
-
-For verified OpenConfig paths, dashboard panels, detailed configuration, and validation results, see [Streaming Telemetry and Monitoring](streaming-telemetry.md).
+The telemetry guide owns the OpenConfig subscriptions, TLS configuration, scrape settings, dashboard details, deployment steps, and validation results: [Streaming Telemetry and Monitoring](streaming-telemetry.md).
 
 ## 2. Expanded Topology Used by `network-test-validation-platform`
 
