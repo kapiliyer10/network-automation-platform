@@ -77,44 +77,10 @@ Examples of normalized fields include interface name, administrative state, oper
 
 ## 5. Configuration Paths
 
-The platform supports two distinct configuration workflows: Jinja2-based CLI configuration generation and live model-driven configuration using NETCONF/YANG.
+The platform supports Jinja2-based CLI configuration generation and NETCONF/YANG model-driven configuration for live device changes. NETCONF/YANG is the primary live configuration mechanism; Jinja2 provides a separate CLI-rendering path.
 
-### Jinja2 CLI Configuration Generation
+The implementation details for configuration rendering, NETCONF operations, and Ansible orchestration are documented in [Configuration Generation and Ansible](configuration-and-ansible.md). Protocol responsibilities and the distinction between on-demand gNMI state retrieval and streaming telemetry are covered in [gNMI, NETCONF, and YANG](gnmi-netconf-and-yang.md).
 
-```text
-Desired Configuration
-        |
-        v
-Jinja2 Template
-        |
-        v
-Generated SR Linux CLI File
-```
-
-The Jinja2 renderer generates SR Linux CLI configuration files under the `generated/` directory. This provides a separate configuration-rendering capability and does not represent the primary live NETCONF deployment workflow.
-
-### NETCONF/YANG Live Configuration
-
-```text
-Desired Configuration
-        |
-        v
-NETCONF Configuration Rendering
-        |
-        v
-NETCONF edit-config / commit
-        |
-        v
-SR Linux Device
-        |
-        v
-Configuration Read-back
-        |
-        v
-Verification
-```
-
-NETCONF/YANG is the primary model-driven mechanism for applying configuration to live SR Linux devices. After configuration is applied, the platform retrieves the resulting configuration state and performs read-back verification.
 ## 6. Runtime, Lab, and CI Separation
 
 - **Containerlab** provides the primary three-router SR Linux environment.
@@ -140,49 +106,6 @@ See [Routing Protocols: OSPF and BGP](routing-protocols.md) for protocol configu
 
 ## 8. Streaming Telemetry and Monitoring
 
-The platform includes an independent streaming telemetry pipeline that monitors all three routers in the primary Containerlab topology. Unlike the Python automation workflow, which retrieves device state on demand, this pipeline continuously collects telemetry for monitoring and visualization.
+The platform includes an independent telemetry pipeline for the primary three-router lab. It complements, but does not replace, the Python application's on-demand state discovery or configuration workflow.
 
-### Monitoring Pipeline
-
-The telemetry collection and visualization flow is:
-
-**SR Linux R1, R2, R3** → **gNMIc** → **Prometheus** → **Grafana**
-
-- **gNMIc:** Connects to the three routers over secure gNMI (TCP `57400`), uses OpenConfig STREAM subscriptions with SAMPLE mode and a five-second sampling interval, validates certificates using the configured CA, and exports Prometheus metrics at `:9804/metrics`.
-- **Prometheus:** Scrapes the gNMIc metrics endpoint every 15 seconds and stores time-series data.
-- **Grafana:** Uses Prometheus as its data source for telemetry visualization.
-
-### Monitoring Configuration
-
-The monitoring configuration is maintained separately from the Python application:
-
-- `telemetry/gnmic.yaml` defines gNMI targets, TLS certificate validation, subscriptions, sampling interval, and Prometheus output.
-- `telemetry/prometheus.yml` defines the Prometheus scrape configuration.
-
-### Verified Telemetry Scope
-
-The implemented OpenConfig subscriptions monitor `ethernet-1/1` on each of the three routers. The two verified telemetry paths are:
-
-- **Incoming octets:** `openconfig:/interfaces/interface[name=ethernet-1/1]/state/counters/in-octets`
-- **Operational status:** `openconfig:/interfaces/interface[name=ethernet-1/1]/state/oper-status`
-
-gNMI credentials are supplied through environment variables.
-
-Only these listed telemetry paths have been verified against all three routers. Model advertisement through gNMI Capabilities does not, by itself, establish that every advertised model path is supported or tested.
-
-### Grafana Dashboard
-
-The `SR Linux Streaming Telemetry` dashboard contains three panels:
-
-1. **Incoming Traffic:** Displays incoming traffic rates for R1, R2, and R3 using the rate of change of incoming-octet counters.
-2. **Cumulative Incoming Octets:** Displays cumulative incoming-octet counters for all three routers.
-3. **Interface Operational Status:** Displays the operational status of `ethernet-1/1` on each router.
-
-### Relationship with the Automation Workflow
-
-Streaming telemetry is an observability capability. It does not replace or modify the Python gNMI discovery client, desired-state comparison, drift detection, NETCONF configuration workflow, or post-change verification.
-
-The two workflows use gNMI for different purposes:
-
-- **Python automation:** Retrieves device state on demand for application-level discovery, comparison, and configuration management.
-- **gNMIc monitoring:** Maintains streaming OpenConfig subscriptions and exports metrics for Prometheus and Grafana.
+The collector configuration, verified OpenConfig paths, TLS settings, Prometheus integration, Grafana dashboard, deployment procedure, and validation evidence are maintained in [Streaming Telemetry and Monitoring](streaming-telemetry.md).
