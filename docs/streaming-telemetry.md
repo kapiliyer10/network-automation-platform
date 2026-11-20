@@ -48,20 +48,11 @@ The monitoring services are separate Docker containers. They are
 not additional Containerlab nodes, and the original router topology
 remains unchanged.
 
-## 3. Network Topology
+## 3. Lab Integration
 
-The implementation uses the original `srl-lab` Containerlab profile.
+The telemetry collector targets R1, R2, and R3 in the original `srl-lab` Containerlab profile. The router container names and fixed management addresses are documented in [Network Topology](network-topology.md).
 
-| Router | Container | Management IP |
-|---|---|---|
-| R1 | `clab-srl-lab-R1` | `172.20.20.4` |
-| R2 | `clab-srl-lab-R2` | `172.20.20.2` |
-| R3 | `clab-srl-lab-R3` | `172.20.20.3` |
-
-The secure gRPC/gNMI management server listens on TCP port `57400`.
-
-The topology does not require Linux end hosts or traffic generators
-for the currently implemented telemetry scope.
+The secure gRPC/gNMI management server listens on TCP port `57400`. Linux end hosts and traffic generators are not required for the currently implemented telemetry scope.
 
 ## 4. gNMI Capabilities Discovery
 
@@ -539,15 +530,7 @@ Never commit `.env`, private keys, passwords, or other credentials.
 
 ### Fixed management addresses
 
-The primary lab assigns explicit management IPv4 addresses to the three routers. Each address matches the IP Subject Alternative Name (SAN) in that router's generated TLS certificate.
-
-| Router | Management IPv4 address |
-|---|---|
-| R1 | `172.20.20.4` |
-| R2 | `172.20.20.2` |
-| R3 | `172.20.20.3` |
-
-These assignments are defined using `mgmt-ipv4` in `topology/srl-lab.clab.yml`. They prevent router identity mismatches when the lab is redeployed.
+The primary lab's fixed router management addresses and container mapping are documented in [Network Topology](network-topology.md). Each management address matches the IP Subject Alternative Name in its generated router TLS certificate. The assignments are defined using `mgmt-ipv4` in `topology/srl-lab.clab.yml` to preserve router identity across normal lab redeployments.
 
 ### Normal startup and shutdown
 
