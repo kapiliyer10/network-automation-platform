@@ -282,7 +282,9 @@ pytest -q
 
 ### Test Results
 
-**Recorded full-suite result:** `100 passed in 87.47s` in a Docker-hosted test run during project validation. Test counts and execution times may vary with code changes and the test environment.
+**Previously recorded full-suite result:** `100 passed in 87.47s` during Docker-hosted project validation.
+
+**Latest local full-suite result:** `102 passed in 96.56s` with Containerlab `0.75.0`. This run includes the updated Docker network resolver tests. The CI workflow is pinned to Containerlab `0.83.0`; that CI environment still requires verification.
 
 The test suites cover application functionality and interactions with the live network lab, including network configuration and management workflows.
 
