@@ -4,7 +4,7 @@ This page summarizes the implementation milestones documented for `network-autom
 
 | Milestone | Scope | Status |
 |---|---|---|
-| 1. Network Lab Foundation | Three-router SR Linux Containerlab lab, IPv4 connectivity, management connectivity, OSPF, and observable device state | Complete |
+| 1. Network Lab Foundation | Three-router SR Linux Containerlab lab, management and IPv4 connectivity, and baseline OSPF routing | Complete |
 | 2. Inventory and Endpoint Discovery | YAML inventory loading, validation, logical device identity, and runtime endpoint resolution | Complete |
 | 3. Device State Discovery | gNMI/YANG state retrieval and normalized device-state model | Complete |
 | 4. Desired State | YAML representation, loading, and validation of intended network state | Complete |
@@ -21,7 +21,7 @@ This page summarizes the implementation milestones documented for `network-autom
 
 ## Additional Implemented Capability
 
-BGP desired-state and NETCONF configuration support was added as an extension to the core `network-automation-platform` workflow. It supports the implemented BGP configuration and read-back / drift-validation path. This is a completed `network-automation-platform` capability; no further BGP development is implied by this documentation.
+BGP desired-state and NETCONF configuration support is implemented as an extension to the core `network-automation-platform` workflow. The workflow supports applying BGP configuration, reading the configuration back, and validating it against the desired state. Automated validation of operational BGP peer state and routing-table outcomes is not currently included. This configuration-management extension is complete within its documented scope.
 
 ## Overall Status
 

@@ -10,7 +10,7 @@ The Python gNMI client retrieves device information from the Nokia SR Linux lab.
 
 The documented normalized state includes hostname, interfaces, IPv4 addresses, routes, OSPF neighbors, and OSPF configuration.
 
-The normalization boundary keeps higher-level comparison and reporting logic separate from raw device responses.
+This normalization keeps comparison and reporting logic independent of raw, device-specific gNMI responses.
 
 ## 3. NETCONF Configuration
 

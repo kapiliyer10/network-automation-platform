@@ -4,28 +4,26 @@
 
 The intended network state is stored in:
 
-```text
-configs/desired/desired_state.yaml
-```
+`configs/desired/desired_state.yaml`
 
 The desired-state loader reads and validates this YAML representation before the comparison and configuration workflows consume it.
 
-The documented desired-state resources include:
+The desired-state model supports:
 
 - Interface administrative state
 - Interface description
 - IPv4 configuration
 - Network-instance interfaces
 - OSPF configuration
-- BGP desired-state configuration support
+- BGP configuration
 
-BGP desired-state and NETCONF configuration support was added as an implemented `network-automation-platform` extension. This document does not claim that BGP operational session state is included in the normalized gNMI state-discovery model.
+BGP desired-state and NETCONF configuration support was added as an implemented extension to `network-automation-platform`. However, BGP operational peer state is not part of the normalized gNMI state-discovery model, so this document does not claim automated BGP session-state validation.
 
 ## 2. Actual-State Discovery
 
-The state-discovery layer uses gNMI to retrieve device information. Retrieved device-specific data is converted into a normalized application model before comparison.
+The state-discovery layer uses gNMI to retrieve device data. The retrieved device-specific data is mapped into a normalized application model, which provides a consistent representation for the comparison workflow.
 
-The normalized state documented by the project includes:
+The normalized application model currently includes:
 
 - Hostname
 - Interfaces
@@ -95,11 +93,11 @@ Actual:   disable
 Status:   DRIFT
 ```
 
-The reporting layer summarizes per-device and overall results. A device can pass while another device reports drift; the overall result reflects the device-level outcomes.
+The reporting layer summarizes comparison results for each device and across the overall network. Individual devices are evaluated separately, so one device can pass while another reports drift. The overall result reflects the combined device-level outcomes.
 
 ## 4. Reconciliation and Verification
 
-When drift is detected, the workflow can generate and apply the required NETCONF configuration. It then retrieves and validates the resulting device state.
+When drift is detected, the workflow generates and applies the required NETCONF configuration. After the commit, it performs post-change verification by reading back the configuration and checking the resulting device state.
 
 ```text
 Detect Drift
@@ -111,7 +109,7 @@ Build NETCONF Configuration
 Apply and Commit
      |
      v
-Retrieve State / Configuration
+Read Back Configuration / Retrieve State
      |
      v
 Verify Desired State
@@ -120,4 +118,4 @@ Verify Desired State
 PASS / FAIL
 ```
 
-The important design rule is that a successful configuration operation alone does not establish that the desired state has been achieved. The post-change verification step checks the resulting state.
+A successful NETCONF commit confirms that the device accepted the configuration; it does not, by itself, prove that the desired state has been achieved. The workflow therefore verifies the read-back configuration and resulting device state.

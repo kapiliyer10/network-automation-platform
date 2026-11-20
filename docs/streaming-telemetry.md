@@ -54,11 +54,11 @@ The implementation uses the original `srl-lab` Containerlab profile.
 
 | Router | Container | Management IP |
 |---|---|---|
-| R1 | clab-srl-lab-R1 | 172.20.20.4 |
-| R2 | clab-srl-lab-R2 | 172.20.20.2 |
-| R3 | clab-srl-lab-R3 | 172.20.20.3 |
+| R1 | `clab-srl-lab-R1` | `172.20.20.4` |
+| R2 | `clab-srl-lab-R2` | `172.20.20.2` |
+| R3 | `clab-srl-lab-R3` | `172.20.20.3` |
 
-The secure gRPC/gNMI management server listens on TCP port 57400.
+The secure gRPC/gNMI management server listens on TCP port `57400`.
 
 The topology does not require Linux end hosts or traffic generators
 for the currently implemented telemetry scope.
@@ -89,11 +89,11 @@ Subscribe RPC operations.
 The secure gRPC management server on each router has:
 
 - gNMI service enabled.
-- Operational state UP.
+- Operational state `UP`.
 - Metadata authentication enabled.
 - TLS profile `clab-profile`.
 - Management network instance `mgmt`.
-- TCP port 57400.
+- TCP port `57400`.
 
 The original lab CA certificate is located at:
 
@@ -161,11 +161,11 @@ gNMIc exposes the received telemetry through its Prometheus output.
 
 | Setting | Value |
 |---|---|
-| Listen address | 0.0.0.0:9804 |
-| HTTP path | /metrics |
-| Metric prefix | srl |
-| Metric expiration | 60 seconds |
-| String handling | strings-as-labels enabled |
+| Listen address | `0.0.0.0:9804` |
+| HTTP path | `/metrics` |
+| Metric prefix | `srl` |
+| Metric expiration | `60 seconds` |
+| String handling | `strings-as-labels` enabled |
 
 The `strings-as-labels` option converts string-valued updates into
 Prometheus metric labels.
@@ -196,12 +196,12 @@ The Prometheus configuration is maintained in:
 
 | Parameter | Value |
 |---|---|
-| Scrape interval | 15 seconds |
-| Evaluation interval | 15 seconds |
-| Job name | gnmic |
-| Scrape target | gnmic:9804 |
+| Scrape interval | `15 seconds` |
+| Evaluation interval | `15 seconds` |
+| Job name | `gnmic` |
+| Scrape target | `gnmic:9804` |
 
-Prometheus communicates with gNMIc using the Docker network name.
+Prometheus communicates with gNMIc using the Docker network name `clab`.
 
 The target `gnmic:9804` is the exporter endpoint. Router identity
 is represented by the `source` label in the individual metrics.
@@ -287,9 +287,9 @@ Status column rather than the entire table row.
 
 | Component | Docker image |
 |---|---|
-| gNMIc | ghcr.io/openconfig/gnmic:0.49.1 |
-| Prometheus | prom/prometheus:v3.13.5 |
-| Grafana | grafana/grafana:13.3.0 |
+| gNMIc | `ghcr.io/openconfig/gnmic:0.49.1` |
+| Prometheus | `prom/prometheus:v3.13.5` |
+| Grafana | `grafana/grafana:13.3.0` |
 
 Docker Compose is not required. The services are managed using
 ordinary Docker commands.
@@ -306,7 +306,9 @@ Confirm that R1, R2, and R3 are running and that the `clab` Docker
 network exists.
 
 The following commands assume that the original lab and its TLS
-certificates have already been created.
+certificates have already been created. These `docker run` commands
+create the monitoring containers; for subsequent starts, use the
+restart procedure in Section 12.7.
 
 ### 11.1 Start gNMIc
 
@@ -378,9 +380,9 @@ docker ps
 
 Expected monitoring containers:
 
-- gnmic
-- prometheus
-- grafana
+- `gnmic`
+- `prometheus`
+- `grafana`
 
 ### 12.2 Check gNMIc logs
 
@@ -415,7 +417,7 @@ Open:
 
 `http://localhost:9090/targets`
 
-The `gnmic` target should report `UP`.
+The `gnmic` target should report `UP`. Also verify that the exported metrics contain samples from all three router sources; a healthy scrape target alone does not confirm every subscription.
 
 ### 12.5 Check Prometheus queries
 
@@ -477,10 +479,10 @@ topology on November 4, 2026.
 | OpenConfig operational-status Get | Passed on R1, R2, R3 |
 | SAMPLE streaming subscription | Passed on R1, R2, R3 |
 | gNMIc Prometheus exporter | Passed |
-| Prometheus scrape target | UP |
+| Prometheus scrape target | `UP` |
 | Prometheus incoming-octets series | Three series |
 | Prometheus interface-status series | Three series |
-| Grafana health | Database OK |
+| Grafana health | `Database OK` |
 | Grafana dashboard | Three panels created and saved |
 
 All three routers reported `UP` for `ethernet-1/1` during validation.
@@ -517,17 +519,16 @@ No Linux end hosts or traffic generators are included.
 This monitoring stack is intended for a local Containerlab
 development environment.
 
-- gNMI uses TLS on port 57400.
+- gNMI uses TLS on TCP port `57400`.
 - Router server certificates are verified against the original
   Containerlab CA.
 - Username and password credentials are passed through environment
   variables.
 - The CA certificate and YAML configuration files are mounted
   read-only into the gNMIc container.
-- Prometheus and gNMIc HTTP endpoints do not have authentication
-  configured in this local setup.
-- Grafana is bound to the host loopback interface.
-- Prometheus and gNMIc ports are published on all host interfaces.
+- Prometheus and gNMIc HTTP endpoints are unauthenticated in this local setup.
+- Grafana is bound to the host loopback address `127.0.0.1`.
+- Prometheus and gNMIc ports (`9090` and `9804`) are published on all host interfaces.
 
 Do not expose unauthenticated development endpoints to untrusted
 networks.
