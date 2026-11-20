@@ -14,65 +14,11 @@ This normalization keeps comparison and reporting logic independent of raw, devi
 
 ## 3. NETCONF Configuration
 
-The NETCONF configuration path builds configuration payloads from desired state and applies them to SR Linux devices.
-
-The workflow uses operations such as:
-
-```text
-edit-config
-commit
-```
-
-The project also supports configuration read-back and post-change validation. The intended lifecycle is:
-
-```text
-Desired State
-      |
-      v
-NETCONF Configuration Rendering
-      |
-      v
-Apply Configuration
-      |
-      v
-Read Back Device Configuration / State
-      |
-      v
-Compare and Verify
-```
+The NETCONF configuration path builds payloads from desired state, applies them to SR Linux devices, commits the changes, and supports configuration read-back and post-change validation. The detailed configuration paths, including Jinja2 CLI generation and Ansible orchestration, are documented in [Configuration Generation and Ansible](configuration-and-ansible.md).
 
 ## 4. Streaming Telemetry with gNMIc
 
-In addition to the Python application's on-demand gNMI state-discovery client, `network-automation-platform` includes a separate streaming telemetry pipeline based on gNMIc.
-
-The pipeline collects telemetry from R1, R2, and R3 in the primary three-router Containerlab topology.
-
-### Verified OpenConfig subscriptions
-
-The current implementation subscribes to two OpenConfig paths for interface `ethernet-1/1` on each router:
-
-| Telemetry | OpenConfig path |
-|---|---|
-| Incoming octets | `openconfig:/interfaces/interface[name=ethernet-1/1]/state/counters/in-octets` |
-| Operational status | `openconfig:/interfaces/interface[name=ethernet-1/1]/state/oper-status` |
-
-The subscriptions use gNMI STREAM mode with SAMPLE streaming and a five-second sample interval. The collector connects to the secure gNMI endpoint on TCP port `57400`, using CA certificate validation and credentials supplied through environment variables.
-
-### Telemetry collection and visualization
-
-The collection pipeline is:
-
-gNMI-enabled SR Linux routers → gNMIc → Prometheus → Grafana
-
-- **gNMIc** maintains the streaming subscriptions and exposes the received telemetry as Prometheus metrics on HTTP port `9804`, at `/metrics`.
-- **Prometheus** scrapes the gNMIc metrics endpoint every 15 seconds and stores the time-series data.
-- **Grafana** queries Prometheus and displays the `SR Linux Streaming Telemetry` dashboard.
-
-The dashboard contains panels for incoming traffic rates, cumulative incoming octets, and interface operational status across R1, R2, and R3.
-
-The gNMIc and Prometheus configuration files are maintained under `telemetry/`.
-
-This monitoring pipeline is independent of the Python application's state-discovery and NETCONF configuration workflow. Only the two OpenConfig paths listed above have been verified on all three routers; advertised model support does not establish that every possible OpenConfig path is implemented or tested.
+The platform uses gNMIc for continuous OpenConfig telemetry subscriptions, independently of the Python client's on-demand gNMI state-discovery workflow. The verified subscriptions and their implementation are documented in [Streaming Telemetry and Monitoring](streaming-telemetry.md).
 
 ## 5. gNMI and NETCONF Responsibilities
 
