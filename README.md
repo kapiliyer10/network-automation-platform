@@ -76,16 +76,7 @@ The platform is developed and tested on a three-router Nokia SR Linux topology d
 
 ### Network Topology
 
-```mermaid
-flowchart TD
-    R1["R1"]
-    R2["R2"]
-    R3["R3"]
-
-    R1 ---|10.0.12.0/30| R2
-    R1 ---|10.0.31.0/30| R3
-    R2 ---|10.0.23.0/30| R3
-```
+The primary and expanded Containerlab profiles, including router links, loopbacks, management addressing, and Linux endpoint connections, are documented in [Network Topology](docs/network-topology.md).
 
 ### Routing and Management
 
@@ -224,81 +215,11 @@ After completing your work, shut down the Containerlab environment:
 
 ## 8. API Reference
 
-The platform exposes its network automation capabilities through a REST API built with FastAPI. The API is implemented in `src/api/main.py` and delegates operations to the existing Python automation workflow.
-
-### Available Endpoints
-
-| Method | Endpoint | Purpose |
-|---|---|---|
-| `GET` | `/` | Returns an informational API message |
-| `GET` | `/devices` | Lists devices from the inventory |
-| `GET` | `/devices/{id}` | Retrieves inventory details for a device |
-| `GET` | `/devices/{id}/state` | Retrieves normalized device state |
-| `POST` | `/devices/{id}/validate` | Compares device state against desired configuration |
-| `POST` | `/devices/{id}/configure` | Reconciles device configuration with desired state |
-| `GET` | `/drift` | Checks all inventoried devices and summarizes configuration drift |
-
-### Example API Requests
-
-The following examples assume the API is running locally on port `8000`.
-
-```bash
-# List inventory devices
-curl http://127.0.0.1:8000/devices
-
-# Retrieve device state
-curl http://127.0.0.1:8000/devices/R1/state
-
-# Validate device configuration
-curl -X POST http://127.0.0.1:8000/devices/R1/validate
-
-# Reconcile device configuration
-curl -X POST http://127.0.0.1:8000/devices/R1/configure
-
-# Check configuration drift across devices
-curl http://127.0.0.1:8000/drift
-```
-
-**Note:** The `/devices/{id}/validate` endpoint checks the device against its desired state. The `/devices/{id}/configure` endpoint performs desired-state reconciliation; it does not accept arbitrary configuration in the request body.
-
-For endpoint implementation details and additional examples, see the [FastAPI Reference](docs/fastapi-reference.md).
+The platform exposes network automation operations through FastAPI. Endpoint definitions, request examples, and configuration behavior are documented in the [FastAPI Reference](docs/fastapi-reference.md).
 
 ## 9. Testing and CI/CD
 
-The platform uses pytest for automated testing, including application-level tests and integration tests against the Containerlab network environment.
-
-### Running Tests Locally
-
-```bash
-# Application and non-integration tests
-pytest -q --ignore=tests/integration
-
-# Live network integration tests
-pytest -q tests/integration
-
-# Complete test suite
-pytest -q
-```
-
-### Test Results
-
-**Previously recorded full-suite result:** `100 passed in 87.47s` during Docker-hosted project validation.
-
-**Latest local full-suite result:** `102 passed in 96.56s` with Containerlab `0.75.0`. This run includes the updated Docker network resolver tests. The CI workflow is pinned to Containerlab `0.83.0`; that CI environment still requires verification.
-
-The test suites cover application functionality and interactions with the live network lab, including network configuration and management workflows.
-
-### Continuous Integration
-
-GitHub Actions automates the validation workflow through `.github/workflows/ci.yml`. The pipeline runs on pushes and pull requests targeting `main` and performs the following steps:
-
-1. Installs Containerlab and Python dependencies.
-2. Deploys the network lab and waits for OSPF convergence.
-3. Runs Python compilation checks and both application and integration test groups.
-4. Builds the application Docker image.
-5. Stops the network lab and uploads JUnit XML test results.
-
-For detailed test coverage, execution procedures, and CI pipeline information, see [Testing and CI/CD](docs/testing-and-ci-cd.md).
+The project uses pytest for application-level and live Containerlab integration tests. GitHub Actions runs compile checks, both test groups, the application image build, lab cleanup, and JUnit result upload. For test commands, coverage, recorded results, and workflow details, see [Testing and CI/CD](docs/testing-and-ci-cd.md).
 
 ## 10. Project Status
 
