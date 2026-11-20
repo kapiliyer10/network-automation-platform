@@ -39,13 +39,17 @@ Documented coverage areas include:
 
 ## 2. Latest Verified Test Result
 
-The latest verified complete Docker-hosted pytest run recorded during project work was:
+The latest verified local full-suite run recorded during this update was:
 
 ```text
-100 passed in 87.47s
+102 passed in 96.56s
 ```
 
-Test counts and duration can change as code, dependencies, and the lab environment evolve. This is a recorded result, not a guarantee for every future run.
+This run was executed with Containerlab `0.75.0` and includes the Docker resolver unit tests and live-container checks against R1, R2, and R3. An earlier Docker-hosted validation run recorded `100 passed in 87.47s`.
+
+The CI workflow is now pinned to Containerlab `0.83.0`; its result remains to be verified by GitHub Actions.
+
+Test counts and duration can change as code, dependencies, and the lab environment evolve. These are recorded results, not guarantees for every future run.
 
 ## 3. GitHub Actions Workflow
 
