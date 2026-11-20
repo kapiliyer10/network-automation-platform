@@ -2,7 +2,7 @@
 
 ## 1. Configuration Paths
 
-The repository contains two configuration-generation paths: Jinja2 CLI rendering and NETCONF/YANG model-driven configuration.
+The repository contains two configuration paths: Jinja2-based CLI configuration rendering for generated files, and NETCONF/YANG model-driven configuration for live device changes.
 
 ### Jinja2 CLI rendering
 
