@@ -223,19 +223,9 @@ The project uses pytest for application-level and live Containerlab integration 
 
 ## 10. Project Status
 
-The core automation workflow and streaming telemetry extension have been implemented and verified in the primary three-router Nokia SR Linux lab.
+The core automation workflow and streaming telemetry extension are implemented and have been validated in the primary three-router Nokia SR Linux lab. The milestone-by-milestone delivery status is summarized in [Project Milestones](docs/milestones.md).
 
-### Implemented and Verified
-
-- **Network automation:** Device-state discovery, desired-state comparison, drift detection, NETCONF configuration, and read-back verification.
-- **Network environment:** Three-router OSPF topology and eBGP full-mesh connectivity. All six BGP peer sessions reached Established, and route exchange was verified through the SR Linux CLI.
-- **Application integration:** FastAPI, Ansible, and Docker integration.
-- **Testing and CI/CD:** Automated pytest suites and GitHub Actions pipeline.
-- **Monitoring:** Streaming telemetry using gNMIc and OpenConfig, with Prometheus metrics and Grafana dashboards for interface counters and operational status.
-
-### Scope and Limitations
-
-The RESTCONF demonstration remains deferred and is not part of the completed core workflow. BGP operational peer-state and route-table validation limitations are documented under [Key Features](#2-key-features).
+**Scope limitations:** The RESTCONF demonstration remains deferred. Although BGP configuration and read-back are supported and the live peer sessions have been verified through the SR Linux CLI, automated operational BGP peer-state and route-table assertions are not yet implemented.
 
 ### Telemetry Dashboard
 
